@@ -92,6 +92,7 @@ function LevelBar({ xp, level }) {
 // ─── AUTH SCREENS ─────────────────────────────────────────────────────────────
 function AuthScreen({ onAuth }) {
   const [mode, setMode]   = useState("login"); // login | register
+  const [role, setRole]   = useState("student"); // student | parent (register only)
   const [form, setForm]   = useState({ name:"", email:"", password:"", board:"cbse", classNum:"9", stream:"", schoolName:"" });
   const [err, setErr]     = useState("");
   const [loading, setLoading] = useState(false);
@@ -105,7 +106,9 @@ function AuthScreen({ onAuth }) {
     try {
       const data = mode === "login"
         ? await api.post("/api/auth/login", { email: form.email, password: form.password })
-        : await api.post("/api/auth/register", { ...form, classNum: parseInt(form.classNum) });
+        : await api.post("/api/auth/register", role === "parent"
+            ? { name: form.name, email: form.email, password: form.password, role: "parent" }
+            : { ...form, classNum: parseInt(form.classNum), role: "student" });
       localStorage.setItem("st_token", data.token);
       onAuth(data.token, data.user);
     } catch (e) { setErr(e.message); }
@@ -136,35 +139,53 @@ function AuthScreen({ onAuth }) {
         <form onSubmit={submit}>
           {mode === "register" && (
             <>
+              <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+                {[{ id:"student", label:"🎓 Student" }, { id:"parent", label:"👪 Parent" }].map(r => (
+                  <button key={r.id} type="button" onClick={() => setRole(r.id)} style={{ flex:1, background: role===r.id ? "#22d3ee22" : "#080c18", border: `1px solid ${role===r.id ? "#22d3ee55" : "#1e2a4a"}`, borderRadius:8, padding:"8px 0", cursor:"pointer", fontSize:12, fontWeight:600, color: role===r.id ? "#22d3ee" : "#475569", fontFamily:"inherit" }}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
               <label style={lbl}>Full Name</label>
               <input style={{ ...inp, marginBottom:12 }} value={form.name} onChange={set("name")} placeholder="Your name" required />
 
-              <label style={lbl}>School Name (optional)</label>
-              <input style={{ ...inp, marginBottom:12 }} value={form.schoolName} onChange={set("schoolName")} placeholder="Your school" />
-
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
-                <div>
-                  <label style={lbl}>Board</label>
-                  <select style={inp} value={form.board} onChange={set("board")}>
-                    {BOARDS.map(b => <option key={b.id} value={b.id}>{b.flag} {b.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>Class</label>
-                  <select style={inp} value={form.classNum} onChange={e => { set("classNum")(e); setForm(p => ({ ...p, stream:"" })); }}>
-                    {Array.from({length:12},(_,i) => i+1).map(c => <option key={c} value={c}>Class {c}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {streams.length > 0 && (
+              {role === "student" && (
                 <>
-                  <label style={lbl}>Stream</label>
-                  <select style={{ ...inp, marginBottom:12 }} value={form.stream} onChange={set("stream")} required>
-                    <option value="">Select stream…</option>
-                    {streams.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                  </select>
+                  <label style={lbl}>School Name (optional)</label>
+                  <input style={{ ...inp, marginBottom:12 }} value={form.schoolName} onChange={set("schoolName")} placeholder="Your school" />
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+                    <div>
+                      <label style={lbl}>Board</label>
+                      <select style={inp} value={form.board} onChange={set("board")}>
+                        {BOARDS.map(b => <option key={b.id} value={b.id}>{b.flag} {b.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={lbl}>Class</label>
+                      <select style={inp} value={form.classNum} onChange={e => { set("classNum")(e); setForm(p => ({ ...p, stream:"" })); }}>
+                        {Array.from({length:12},(_,i) => i+1).map(c => <option key={c} value={c}>Class {c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {streams.length > 0 && (
+                    <>
+                      <label style={lbl}>Stream</label>
+                      <select style={{ ...inp, marginBottom:12 }} value={form.stream} onChange={set("stream")} required>
+                        <option value="">Select stream…</option>
+                        {streams.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                      </select>
+                    </>
+                  )}
                 </>
+              )}
+
+              {role === "parent" && (
+                <div style={{ background:"#080c18", border:"1px solid #1e2a4a", borderRadius:8, padding:"10px 12px", fontSize:11.5, color:"#64748b", marginBottom:12, lineHeight:1.5 }}>
+                  After creating your account, your child can share a one-time link code from their app so you can view their progress. You won't be able to edit anything — just view.
+                </div>
               )}
             </>
           )}
@@ -316,10 +337,282 @@ function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
   );
 }
 
+// ─── TINY MARKDOWN RENDERER (headings/bold/italic/lists/code, no deps) ────────
+function renderMarkdown(md) {
+  const lines = (md||"").split("\n");
+  const blocks = []; let list = null;
+  const inline = (t) => t
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/\*(.+?)\*/g, "<i>$1</i>")
+    .replace(/`(.+?)`/g, "<code style='background:#080c18;padding:1px 5px;border-radius:4px;color:#22d3ee'>$1</code>");
+  lines.forEach((line) => {
+    const l = line.trim();
+    if (!l) { if (list) { blocks.push(list); list = null; } return; }
+    const h = l.match(/^(#{1,3})\s+(.*)/);
+    if (h) {
+      if (list) { blocks.push(list); list = null; }
+      const size = h[1].length===1?18:h[1].length===2?15:13;
+      blocks.push(<div key={blocks.length} style={{ fontWeight:800, fontSize:size, fontFamily:"'Sora',sans-serif", margin:"14px 0 6px", color:"#e2e8f0" }} dangerouslySetInnerHTML={{__html:inline(h[2])}} />);
+      return;
+    }
+    if (/^[-*]\s+/.test(l)) {
+      const item = <li key={Math.random()} style={{ fontSize:13, color:"#94a3b8", marginBottom:4 }} dangerouslySetInnerHTML={{__html:inline(l.replace(/^[-*]\s+/,""))}} />;
+      if (!list) list = <ul key={blocks.length} style={{ margin:"4px 0 10px", paddingLeft:20 }}>{[item]}</ul>;
+      else list = <ul key={list.key} style={{ margin:"4px 0 10px", paddingLeft:20 }}>{[...list.props.children, item]}</ul>;
+      return;
+    }
+    if (list) { blocks.push(list); list = null; }
+    blocks.push(<p key={blocks.length} style={{ fontSize:13, color:"#94a3b8", lineHeight:1.7, margin:"0 0 10px" }} dangerouslySetInnerHTML={{__html:inline(l)}} />);
+  });
+  if (list) blocks.push(list);
+  return blocks;
+}
+
+// ─── CHAPTER STUDY PANEL (read notes + take a practice paper) ────────────────
+function ChapterStudyPanel({ api, chapter, subjectColor, onClose }) {
+  const [content, setContent]   = useState(null); // {available, body}
+  const [paperInfo, setPaperInfo] = useState(null); // {neet, cbse}
+  const [loading, setLoading]   = useState(true);
+  const [view, setView]         = useState("notes"); // notes | paper-take | paper-result | doubt
+  const [examTag, setExamTag]   = useState(null);
+  const [paper, setPaper]       = useState(null);   // {questions, markingNote}
+  const [ansMap, setAnsMap]     = useState({});     // {questionId: selectedIndex}
+  const [result, setResult]     = useState(null);
+  const [busy, setBusy]         = useState(false);
+  const [doubtQ, setDoubtQ]     = useState("");
+  const [doubtMsgs, setDoubtMsgs] = useState([]);   // [{role:'q'|'a', text}]
+  const [doubtBusy, setDoubtBusy] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [autoRead, setAutoRead] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef   = useRef([]);
+
+  useEffect(() => {
+    return () => {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const [c,p,d] = await Promise.all([
+          api.get(`/api/chapter/${chapter.id}/content`),
+          api.get(`/api/chapter/${chapter.id}/paper-info`),
+          api.get(`/api/doubts?chapterId=${chapter.id}`),
+        ]);
+        setContent(c); setPaperInfo(p);
+        setDoubtMsgs(d.slice().reverse().flatMap(x => [{role:'q',text:x.question},{role:'a',text:x.answer}]));
+      } catch (e) { console.error(e.message); }
+      setLoading(false);
+    })();
+  }, [chapter.id]);
+
+  function speak(text) {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+  }
+
+  async function askDoubt(overrideQ) {
+    const q = (overrideQ ?? doubtQ).trim();
+    if (!q || doubtBusy) return;
+    setDoubtMsgs(p => [...p, {role:'q',text:q}]);
+    setDoubtQ(""); setDoubtBusy(true);
+    try {
+      const res = await api.post("/api/doubts/ask", { chapterId: chapter.id, question: q });
+      setDoubtMsgs(p => [...p, {role:'a',text:res.answer}]);
+      if (autoRead) speak(res.answer);
+    } catch (e) {
+      setDoubtMsgs(p => [...p, {role:'a',text:`⚠️ ${e.message}`}]);
+    }
+    setDoubtBusy(false);
+  }
+
+  async function toggleRecording() {
+    if (recording) {
+      mediaRecorderRef.current?.stop();
+      setRecording(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      const mr = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size>0) audioChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || "audio/webm" });
+        setTranscribing(true);
+        try {
+          const base64 = await new Promise((resolve,reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          const res = await api.post("/api/doubts/transcribe", { audioBase64: base64, mimeType: mr.mimeType || "audio/webm" });
+          setDoubtQ(p => (p ? p + " " : "") + res.text);
+        } catch (e) { alert(e.message || "Couldn't transcribe — please type instead"); }
+        setTranscribing(false);
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      setRecording(true);
+    } catch (e) {
+      alert("Microphone access is needed for voice doubts. Please allow it, or type your question instead.");
+    }
+  }
+
+  async function startPaper(tag) {
+    setBusy(true); setExamTag(tag);
+    try {
+      const p = await api.post("/api/papers/generate", { chapterId: chapter.id, examTag: tag });
+      setPaper(p); setAnsMap({}); setView("paper-take");
+    } catch (e) { alert(e.message); }
+    setBusy(false);
+  }
+
+  async function submitPaper() {
+    setBusy(true);
+    try {
+      const answers = paper.questions.map(q => ({ questionId:q.id, selectedIndex: ansMap[q.id] ?? null }));
+      const res = await api.post("/api/papers/submit", { chapterId: chapter.id, examTag, answers });
+      setResult(res); setView("paper-result");
+    } catch (e) { alert(e.message); }
+    setBusy(false);
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"#06080fee", zIndex:100, overflowY:"auto", padding:16 }}>
+      <div style={{ maxWidth:560, margin:"0 auto" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+          <button onClick={onClose} style={btn("#475569")}>← Close</button>
+          {view!=="paper-take" && (
+            <div style={{ display:"flex", gap:6 }}>
+              {view!=="notes" && (
+                <button onClick={() => setView("notes")} style={{ ...btn(subjectColor||"#22d3ee"), fontSize:11 }}>📖 Notes</button>
+              )}
+              {view!=="doubt" && (
+                <button onClick={() => setView("doubt")} style={{ ...btn("#a78bfa"), fontSize:11 }}>💬 Ask a Doubt</button>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div style={{ fontSize:16, fontWeight:800, fontFamily:"'Sora',sans-serif", marginBottom:14 }}>{chapter.name}</div>
+
+        {loading ? (
+          <div style={{ color:"#475569", fontSize:13 }}>Loading…</div>
+        ) : view === "notes" ? (
+          <>
+            <div style={card}>
+              {content?.available ? renderMarkdown(content.body) : (
+                <div style={{ fontSize:12.5, color:"#475569", lineHeight:1.6 }}>
+                  Study notes for this chapter aren't published yet. Once your textbook content is added, they'll appear here.
+                </div>
+              )}
+            </div>
+            {(paperInfo?.neet>0 || paperInfo?.cbse>0) && (
+              <div style={{ ...card, marginTop:12 }}>
+                <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Practice Paper</div>
+                <div style={{ display:"flex", gap:8 }}>
+                  {paperInfo.neet>0 && <button onClick={() => startPaper("neet")} disabled={busy} style={{ ...btn("#4ade80"), flex:1 }}>NEET Format ({paperInfo.neet} Qs)</button>}
+                  {paperInfo.cbse>0 && <button onClick={() => startPaper("cbse")} disabled={busy} style={{ ...btn("#22d3ee"), flex:1 }}>CBSE Format ({paperInfo.cbse} Qs)</button>}
+                </div>
+              </div>
+            )}
+          </>
+        ) : view === "paper-take" ? (
+          <div>
+            <div style={{ background:"#1c1202", border:"1px solid #78350f", borderRadius:8, padding:"8px 12px", fontSize:11.5, color:"#fbbf24", marginBottom:14 }}>
+              {paper.markingNote}
+            </div>
+            {paper.questions.map((q,i) => (
+              <div key={q.id} style={{ ...card, marginBottom:10 }}>
+                <div style={{ fontSize:12.5, marginBottom:10 }}>{i+1}. {q.text}</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {q.options.map((opt,oi) => (
+                    <button key={oi} onClick={() => setAnsMap(p => ({...p,[q.id]:oi}))} style={{ textAlign:"left", padding:"8px 10px", borderRadius:8, border:`1px solid ${ansMap[q.id]===oi?"#22d3ee":"#1e2a4a"}`, background: ansMap[q.id]===oi?"#22d3ee22":"#080c18", color:"#e2e8f0", fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <button onClick={submitPaper} disabled={busy} style={{ ...btn("#22d3ee"), width:"100%", padding:"12px 0", marginTop:6 }}>
+              {busy ? "Submitting…" : `Submit (${Object.keys(ansMap).length}/${paper.questions.length} answered)`}
+            </button>
+          </div>
+        ) : view === "paper-result" ? (
+          <div>
+            <div style={{ ...card, textAlign:"center", marginBottom:14 }}>
+              <div style={{ fontSize:28, fontWeight:800, color: result.score>=0 ? "#4ade80" : "#f87171" }}>{result.score} / {result.maxScore}</div>
+              <div style={{ fontSize:11, color:"#475569", marginTop:4 }}>{result.correctCt} correct · {result.wrongCt} wrong · {result.skippedCt} skipped · +{result.xpEarned} XP</div>
+            </div>
+            {paper.questions.map((q,i) => {
+              const g = result.graded.find(x => x.questionId===q.id);
+              return (
+                <div key={q.id} style={{ ...card, marginBottom:8 }}>
+                  <div style={{ fontSize:12.5, marginBottom:8 }}>{i+1}. {q.text}</div>
+                  {q.options.map((opt,oi) => {
+                    const isCorrect = oi===g.correctIndex;
+                    const isPicked = oi===g.selectedIndex;
+                    const bg = isCorrect ? "#022c14" : (isPicked ? "#3b0a0a" : "#080c18");
+                    const border = isCorrect ? "#14532d" : (isPicked ? "#7f1d1d" : "#1e2a4a");
+                    return <div key={oi} style={{ padding:"6px 10px", borderRadius:8, border:`1px solid ${border}`, background:bg, fontSize:11.5, marginBottom:4, color:"#e2e8f0" }}>{opt}{isCorrect?" ✓":""}{isPicked&&!isCorrect?" ✕":""}</div>;
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        ) : view === "doubt" && (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"#0d0a1f", border:"1px solid #4c1d95", borderRadius:8, padding:"8px 12px", marginBottom:14 }}>
+              <div style={{ fontSize:11.5, color:"#c4b5fd" }}>Ask anything about "{chapter.name}" — by typing or speaking.</div>
+              <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#a78bfa", whiteSpace:"nowrap", marginLeft:8, cursor:"pointer" }}>
+                <input type="checkbox" checked={autoRead} onChange={e => setAutoRead(e.target.checked)} />
+                🔊 Read aloud
+              </label>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:14 }}>
+              {doubtMsgs.length === 0 && <div style={{ fontSize:11.5, color:"#475569" }}>No doubts asked yet for this chapter.</div>}
+              {doubtMsgs.map((m,i) => (
+                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:6, alignSelf: m.role==='q'?'flex-end':'flex-start', maxWidth:"85%" }}>
+                  <div style={{ background: m.role==='q'?'#22d3ee22':'#0d1326', border:`1px solid ${m.role==='q'?'#22d3ee55':'#1e2a4a'}`, borderRadius:10, padding:"8px 12px", fontSize:12.5, color:"#e2e8f0", whiteSpace:"pre-wrap", lineHeight:1.5 }}>
+                    {m.text}
+                  </div>
+                  {m.role==='a' && (
+                    <button onClick={() => speak(m.text)} title="Read aloud" style={{ background:"transparent", border:"none", cursor:"pointer", color:"#475569", fontSize:14, flexShrink:0 }}>🔊</button>
+                  )}
+                </div>
+              ))}
+              {doubtBusy && <div style={{ alignSelf:'flex-start', fontSize:11.5, color:"#475569" }}>Thinking…</div>}
+            </div>
+            <div style={{ display:"flex", gap:8, position:"sticky", bottom:0, background:"#06080f", paddingTop:8 }}>
+              <button onClick={toggleRecording} disabled={transcribing} title={recording?"Stop recording":"Speak your doubt"} style={{ width:38, height:38, borderRadius:8, border:`1px solid ${recording?"#f87171":"#1e2a4a"}`, background: recording?"#3b0a0a":"#0d1326", color: recording?"#f87171":"#a78bfa", fontSize:16, cursor:"pointer", flexShrink:0 }}>
+                {transcribing ? "…" : recording ? "⏹" : "🎤"}
+              </button>
+              <input style={{ ...inp, flex:1 }} value={doubtQ} onChange={e=>setDoubtQ(e.target.value)} onKeyDown={e => { if (e.key==='Enter') askDoubt(); }} placeholder={recording ? "Listening…" : "Type or tap 🎤 to speak…"} />
+              <button onClick={() => askDoubt()} disabled={doubtBusy || !doubtQ.trim()} style={{ ...btn("#a78bfa"), opacity: (doubtBusy||!doubtQ.trim())?0.6:1 }}>Ask</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── SUBJECTS VIEW ────────────────────────────────────────────────────────────
-function SubjectsView({ subjects, progress, onStatusChange }) {
+function SubjectsView({ subjects, progress, onStatusChange, api }) {
   const [selSub, setSelSub] = useState(null);
   const [filter, setFilter] = useState("all"); // all | cbse | neet
+  const [studyChapter, setStudyChapter] = useState(null);
 
   const sub = selSub ? subjects.find(s => s.id === selSub) : null;
 
@@ -362,7 +655,8 @@ function SubjectsView({ subjects, progress, onStatusChange }) {
                   <div style={{ fontSize:12, color:"#e2e8f0" }}>{i+1}. {ch.name}</div>
                   {ch.ch_type === "neet" && <div style={{ fontSize:9, color:"#4ade80", marginTop:2 }}>NEET Extra</div>}
                 </div>
-                <div style={{ display:"flex", gap:4 }}>
+                <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+                  <button onClick={() => setStudyChapter(ch)} title="Study this chapter" style={{ width:26, height:26, borderRadius:6, border:"1px solid #1e2a4a", background:"#0d1326", cursor:"pointer", fontSize:12 }}>📖</button>
                   {STATUS_CFG.map((s,si) => (
                     <button key={si} onClick={() => onStatusChange(ch.id, si)} title={s.label} style={{ width:26, height:26, borderRadius:6, border:`1px solid ${st===si ? s.border : "#1e2a4a"}`, background: st===si ? s.bg : "#0d1326", cursor:"pointer", color: st===si ? s.text : "#334155", fontSize:11 }}>
                       {s.short}
@@ -373,6 +667,8 @@ function SubjectsView({ subjects, progress, onStatusChange }) {
             );
           })}
         </div>
+
+        {studyChapter && <ChapterStudyPanel api={api} chapter={studyChapter} subjectColor={sub.color} onClose={() => setStudyChapter(null)} />}
       </div>
     );
   }
@@ -630,6 +926,79 @@ function PlannerView({ planner, subjects, onSave }) {
 }
 
 // ─── BADGES VIEW ──────────────────────────────────────────────────────────────
+function FamilyView({ api }) {
+  const [code, setCode]       = useState(null);
+  const [parents, setParents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [genLoading, setGenLoading] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [c, p] = await Promise.all([api.get("/api/student/link-code"), api.get("/api/student/parents")]);
+      setCode(c); setParents(p);
+    } catch (e) { console.error(e.message); }
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function generate() {
+    setGenLoading(true);
+    try { setCode(await api.post("/api/student/link-code")); }
+    catch (e) { console.error(e.message); }
+    setGenLoading(false);
+  }
+
+  async function revoke(parentId) {
+    if (!confirm("Remove this parent's access to your progress?")) return;
+    await api.del(`/api/student/parents/${parentId}`);
+    setParents(p => p.filter(x => x.id !== parentId));
+  }
+
+  if (loading) return <div style={{ padding:16, color:"#475569", fontSize:13 }}>Loading…</div>;
+
+  const expired = code && new Date(code.expires_at) < new Date();
+
+  return (
+    <div style={{ padding:16, display:"flex", flexDirection:"column", gap:16 }}>
+      <div style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:18 }}>👪 Family Access</div>
+
+      <div style={card}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:6 }}>Link a Parent</div>
+        <div style={{ fontSize:11.5, color:"#64748b", marginBottom:12, lineHeight:1.5 }}>
+          Share this code with a parent so they can view (read-only) your progress, tests, planner, and badges. Codes expire after 24 hours.
+        </div>
+        {code && !expired ? (
+          <div style={{ background:"#080c18", border:"1px solid #22d3ee55", borderRadius:8, padding:"14px 0", textAlign:"center", marginBottom:10 }}>
+            <div style={{ fontSize:26, fontWeight:800, letterSpacing:"0.25em", color:"#22d3ee", fontFamily:"'Sora',sans-serif" }}>{code.code}</div>
+            <div style={{ fontSize:10, color:"#475569", marginTop:4 }}>Expires {new Date(code.expires_at).toLocaleString()}</div>
+          </div>
+        ) : (
+          <div style={{ fontSize:11.5, color:"#475569", marginBottom:10 }}>{expired ? "Your last code expired." : "No active code yet."}</div>
+        )}
+        <button onClick={generate} disabled={genLoading} style={{ ...btn("#22d3ee"), width:"100%", padding:"10px 0", opacity: genLoading?0.6:1 }}>
+          {genLoading ? "Generating…" : code && !expired ? "Generate New Code" : "Generate Code"}
+        </button>
+      </div>
+
+      <div style={card}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Parents With Access</div>
+        {parents.length === 0 ? (
+          <div style={{ fontSize:11.5, color:"#475569" }}>No parent is linked to your account yet.</div>
+        ) : parents.map(p => (
+          <div key={p.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #1e2a4a" }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600 }}>{p.name}</div>
+              <div style={{ fontSize:10.5, color:"#475569" }}>{p.email} · since {new Date(p.linked_at).toLocaleDateString()}</div>
+            </div>
+            <button onClick={() => revoke(p.id)} style={{ ...btn("#f87171"), fontSize:11, padding:"6px 10px" }}>Revoke</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BadgesView({ badges }) {
   const earned = badges.filter(b => b.earned);
   const locked = badges.filter(b => !b.earned);
@@ -762,7 +1131,280 @@ const TABS = [
   { id:"planner",   icon:"📅", label:"Plan" },
   { id:"analytics", icon:"📊", label:"Charts" },
   { id:"badges",    icon:"🏆", label:"Badges" },
+  { id:"family",    icon:"👪", label:"Family" },
 ];
+
+// ─── PARENT DASHBOARD ───────────────────────────────────────────────────────
+function LinkChildForm({ api, onLinked }) {
+  const [code, setCode] = useState("");
+  const [err, setErr]   = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault(); setErr(""); setLoading(true);
+    try {
+      const res = await api.post("/api/parent/link", { code });
+      setCode("");
+      onLinked(res.child);
+    } catch (e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div style={card}>
+      <div style={{ fontSize:13, fontWeight:700, marginBottom:6 }}>Link a Child</div>
+      <div style={{ fontSize:11.5, color:"#64748b", marginBottom:12, lineHeight:1.5 }}>
+        Ask your child to open StudyTracker → Family tab → generate a code, and enter it below.
+      </div>
+      <form onSubmit={submit} style={{ display:"flex", gap:8 }}>
+        <input style={{ ...inp, textTransform:"uppercase", letterSpacing:"0.15em", textAlign:"center", fontWeight:700 }} value={code} onChange={e => setCode(e.target.value)} placeholder="ABCD12" maxLength={8} required />
+        <button type="submit" disabled={loading} style={{ ...btn("#22d3ee"), whiteSpace:"nowrap", opacity: loading?0.6:1 }}>{loading ? "…" : "Link"}</button>
+      </form>
+      {err && <div style={{ background:"#3b0a0a", border:"1px solid #7f1d1d", borderRadius:8, padding:"8px 10px", fontSize:11.5, color:"#fca5a5", marginTop:10 }}>{err}</div>}
+    </div>
+  );
+}
+
+function ChildDetail({ api, child, onBack, onUnlink }) {
+  const [stats, setStats]       = useState(null);
+  const [syllabus, setSyllabus] = useState([]);
+  const [tests, setTests]       = useState([]);
+  const [planner, setPlanner]   = useState({});
+  const [badges, setBadges]     = useState([]);
+  const [activity, setActivity] = useState([]);
+  const [doubts, setDoubts]     = useState([]);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const [s,sy,t,p,b,a,d] = await Promise.all([
+          api.get(`/api/parent/child/${child.id}/stats`),
+          api.get(`/api/parent/child/${child.id}/syllabus-progress`),
+          api.get(`/api/parent/child/${child.id}/tests`),
+          api.get(`/api/parent/child/${child.id}/planner`),
+          api.get(`/api/parent/child/${child.id}/badges`),
+          api.get(`/api/parent/child/${child.id}/activity`),
+          api.get(`/api/parent/child/${child.id}/doubts`),
+        ]);
+        setStats(s); setSyllabus(sy); setTests(t); setPlanner(p); setBadges(b); setActivity(a); setDoubts(d);
+      } catch (e) { console.error(e.message); }
+      setLoading(false);
+    })();
+  }, [child.id]);
+
+  if (loading) return (
+    <div style={{ padding:16 }}>
+      <button onClick={onBack} style={{ ...btn("#475569"), marginBottom:12 }}>← Back</button>
+      <div style={{ color:"#475569", fontSize:13 }}>Loading {child.name}'s data…</div>
+    </div>
+  );
+
+  const earnedBadges = badges.filter(b => b.earned);
+
+  return (
+    <div style={{ padding:16, display:"flex", flexDirection:"column", gap:16 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <button onClick={onBack} style={btn("#475569")}>← Back</button>
+        <button onClick={() => onUnlink(child.id)} style={{ ...btn("#f87171"), fontSize:11 }}>Unlink</button>
+      </div>
+
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ width:48, height:48, borderRadius:12, background: child.avatar_color||"#22d3ee", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, fontWeight:800, color:"#06080f" }}>
+          {child.name?.[0]?.toUpperCase()}
+        </div>
+        <div>
+          <div style={{ fontSize:18, fontWeight:800, fontFamily:"'Sora',sans-serif" }}>{child.name}</div>
+          <div style={{ fontSize:11.5, color:"#64748b" }}>{BOARDS.find(b=>b.id===child.board)?.label||child.board} · Class {child.class_num}{child.stream ? ` (${child.stream})` : ""}</div>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
+        {[
+          { label:"Level", val: `${stats.level}` },
+          { label:"XP", val: stats.xp },
+          { label:"Streak", val: `🔥${stats.streak}` },
+          { label:"Avg Score", val: `${stats.avgScore}%` },
+        ].map(s => (
+          <div key={s.label} style={{ ...card, padding:10, textAlign:"center" }}>
+            <div style={{ fontSize:16, fontWeight:800 }}>{s.val}</div>
+            <div style={{ fontSize:9, color:"#475569", textTransform:"uppercase", letterSpacing:"0.06em" }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Subject progress */}
+      <div style={card}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Subject Progress</div>
+        {syllabus.length === 0 && <div style={{ fontSize:11.5, color:"#475569" }}>No syllabus data.</div>}
+        {syllabus.map(s => (
+          <div key={s.id} style={{ marginBottom:10 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
+              <span>{s.icon} {s.name}</span>
+              <span style={{ color:"#475569" }}>{s.doneChapters}/{s.totalChapters}</span>
+            </div>
+            <div style={{ background:"#080c18", borderRadius:6, height:6, overflow:"hidden" }}>
+              <div style={{ width:`${s.pct}%`, height:"100%", background: s.color||"#22d3ee", borderRadius:6 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent tests */}
+      <div style={card}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Recent Tests</div>
+        {tests.length === 0 && <div style={{ fontSize:11.5, color:"#475569" }}>No tests logged yet.</div>}
+        {tests.slice(0,8).map(t => (
+          <div key={t.id} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:"1px solid #1e2a4a", fontSize:12 }}>
+            <div>
+              <div style={{ fontWeight:600 }}>{t.subject_name}</div>
+              <div style={{ fontSize:10, color:"#475569" }}>{t.test_type} · {new Date(t.test_date).toLocaleDateString()}</div>
+            </div>
+            <div style={{ fontWeight:700, color: (t.score/t.max_score*100)>=60 ? "#4ade80" : "#f87171" }}>
+              {t.score}/{t.max_score}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Weekly planner */}
+      <div style={card}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Weekly Plan</div>
+        {DAYS.every(d => !(planner[d]||[]).length) ? (
+          <div style={{ fontSize:11.5, color:"#475569" }}>No planner entries yet.</div>
+        ) : DAYS.map(d => (planner[d]||[]).length > 0 && (
+          <div key={d} style={{ marginBottom:8 }}>
+            <div style={{ fontSize:10, color:"#22d3ee", fontWeight:700, marginBottom:3 }}>{d}</div>
+            {planner[d].map((e,i) => (
+              <div key={i} style={{ fontSize:11.5, color:"#94a3b8", padding:"2px 0" }}>{e.subject} — {e.topic} ({e.mins}m)</div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Badges */}
+      <div style={card}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Badges Earned ({earnedBadges.length}/{badges.length})</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+          {earnedBadges.length === 0 && <div style={{ fontSize:11.5, color:"#475569" }}>No badges yet.</div>}
+          {earnedBadges.map(b => (
+            <div key={b.id} title={b.desc} style={{ fontSize:20 }}>{b.emoji}</div>
+          ))}
+        </div>
+      </div>
+
+      {/* Doubts asked */}
+      <div style={card}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Recent Doubts Asked</div>
+        {doubts.length === 0 ? (
+          <div style={{ fontSize:11.5, color:"#475569" }}>No doubts asked yet.</div>
+        ) : doubts.slice(0,10).map(d => (
+          <div key={d.id} style={{ padding:"8px 0", borderBottom:"1px solid #1e2a4a" }}>
+            <div style={{ fontSize:12, color:"#e2e8f0", fontWeight:600, marginBottom:3 }}>{d.question}</div>
+            <div style={{ fontSize:11, color:"#64748b", lineHeight:1.5 }}>{d.answer.length>180 ? d.answer.slice(0,180)+"…" : d.answer}</div>
+            <div style={{ fontSize:9.5, color:"#334155", marginTop:3 }}>{new Date(d.created_at).toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Activity feed */}
+      <div style={card}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Recent Activity</div>
+        {activity.length === 0 ? (
+          <div style={{ fontSize:11.5, color:"#475569" }}>No activity recorded yet.</div>
+        ) : activity.map((a,i) => {
+          const m = a.event_meta||{};
+          const label = a.event_type==="chapter_opened" ? "Opened a chapter to study"
+            : a.event_type==="progress_updated" ? `Marked a chapter as ${STATUS_CFG[m.status]?.label||"updated"}`
+            : a.event_type==="test_logged" ? `Logged a test — ${m.subjectName} (${m.score}/${m.maxScore})`
+            : a.event_type==="paper_attempted" ? `Attempted a ${m.examTag==="neet"?"NEET":"CBSE"} practice paper — ${m.score}/${m.maxScore}`
+            : a.event_type==="doubt_asked" ? `Asked a doubt — "${m.question}"`
+            : a.event_type;
+          return (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom: i<activity.length-1?"1px solid #1e2a4a":"none", fontSize:11.5 }}>
+              <span style={{ color:"#94a3b8" }}>{label}</span>
+              <span style={{ color:"#334155", fontSize:10, whiteSpace:"nowrap", marginLeft:8 }}>{new Date(a.created_at).toLocaleString()}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ParentApp({ user, api, onLogout }) {
+  const [children, setChildren] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading]   = useState(true);
+
+  async function loadChildren() {
+    setLoading(true);
+    try { setChildren(await api.get("/api/parent/children")); }
+    catch (e) { console.error(e.message); }
+    setLoading(false);
+  }
+  useEffect(() => { loadChildren(); }, []);
+
+  function handleLinked(child) {
+    setChildren(p => p.some(c => c.id===child.id) ? p : [...p, child]);
+  }
+
+  async function handleUnlink(studentId) {
+    if (!confirm("Remove this child from your dashboard?")) return;
+    await api.del(`/api/parent/children/${studentId}`);
+    setChildren(p => p.filter(c => c.id !== studentId));
+    setSelected(null);
+  }
+
+  return (
+    <div style={{ background:"#06080f", minHeight:"100vh", color:"#e2e8f0", fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#06080f;} input::placeholder{color:#334155;}`}</style>
+
+      <div style={{ background:"#090d1e", borderBottom:"1px solid #1e2a4a", padding:"12px 16px", position:"sticky", top:0, zIndex:60, display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ width:32, height:32, borderRadius:8, background:"linear-gradient(135deg,#22d3ee,#a78bfa)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>👪</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:13, fontWeight:800, fontFamily:"'Sora',sans-serif" }}>Parent Dashboard</div>
+          <div style={{ fontSize:10.5, color:"#475569" }}>{user.name}</div>
+        </div>
+        <button onClick={onLogout} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#475569", fontSize:16, padding:4 }} title="Sign out">⎋</button>
+      </div>
+
+      {selected ? (
+        <ChildDetail api={api} child={selected} onBack={() => setSelected(null)} onUnlink={handleUnlink} />
+      ) : (
+        <div style={{ padding:16, display:"flex", flexDirection:"column", gap:16 }}>
+          <LinkChildForm api={api} onLinked={handleLinked} />
+
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Your Children</div>
+            {loading ? (
+              <div style={{ fontSize:11.5, color:"#475569" }}>Loading…</div>
+            ) : children.length === 0 ? (
+              <div style={{ ...card, fontSize:11.5, color:"#475569" }}>No children linked yet. Use a code above to get started.</div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {children.map(c => (
+                  <button key={c.id} onClick={() => setSelected(c)} style={{ ...card, display:"flex", alignItems:"center", gap:12, textAlign:"left", cursor:"pointer", width:"100%", fontFamily:"inherit" }}>
+                    <div style={{ width:40, height:40, borderRadius:10, background: c.avatar_color||"#22d3ee", display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:800, color:"#06080f", flexShrink:0 }}>
+                      {c.name?.[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color:"#e2e8f0" }}>{c.name}</div>
+                      <div style={{ fontSize:11, color:"#64748b" }}>Class {c.class_num} · Lv.{c.level} · 🔥{c.streak}</div>
+                    </div>
+                    <div style={{ color:"#334155", fontSize:16 }}>→</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function App() {
   const [token,    setToken]    = useState(() => localStorage.getItem("st_token") || "");
@@ -789,15 +1431,19 @@ export default function App() {
     if (!token) { setLoading(false); return; }
     (async () => {
       try {
-        const [me, syl, prog, tsts, plan, bdg] = await Promise.all([
-          api.get("/api/me"),
+        const me = await api.get("/api/me");
+        setUser(me);
+        if (me.role === "parent") {
+          setLoading(false);
+          return; // ParentApp fetches its own data (linked children)
+        }
+        const [syl, prog, tsts, plan, bdg] = await Promise.all([
           api.get("/api/syllabus"),
           api.get("/api/progress"),
           api.get("/api/tests"),
           api.get("/api/planner"),
           api.get("/api/badges"),
         ]);
-        setUser(me);
         setSubjects(syl);
         setProgress(prog);
         setTests(tsts);
@@ -870,13 +1516,16 @@ export default function App() {
     </div>
   );
 
+  if (user.role === "parent") return <ParentApp user={user} api={api} onLogout={handleLogout} />;
+
   const pages = {
     dashboard: <Dashboard user={user} subjects={subjects} progress={progress} tests={tests} onStatusChange={handleStatusChange} />,
-    subjects:  <SubjectsView subjects={subjects} progress={progress} onStatusChange={handleStatusChange} />,
+    subjects:  <SubjectsView subjects={subjects} progress={progress} onStatusChange={handleStatusChange} api={api} />,
     tests:     <TestsView tests={tests} subjects={subjects} onAdd={handleAddTest} onDelete={handleDeleteTest} />,
     planner:   <PlannerView planner={planner} subjects={subjects} onSave={handleSavePlanner} />,
     analytics: <AnalyticsView subjects={subjects} progress={progress} tests={tests} />,
     badges:    <BadgesView badges={badges} />,
+    family:    <FamilyView api={api} />,
   };
 
   return (
