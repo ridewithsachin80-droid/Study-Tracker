@@ -1375,10 +1375,11 @@ function ParentApp({ user, api, onLogout }) {
   }
 
   return (
-    <div style={{ background:"#0A0D12", minHeight:"100vh", color:"#ECE7DC", fontFamily:"'DM Sans',system-ui,sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#0A0D12;} input::placeholder{color:#4B5563;}`}</style>
+    <div style={{ background:"#05060A", minHeight:"100vh" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#05060A;} input::placeholder{color:#4B5563;} @media(min-width:640px){ .app-shell{box-shadow:0 0 80px #00000090;} }`}</style>
+      <div className="app-shell" style={{ maxWidth:560, margin:"0 auto", background:"#0A0D12", minHeight:"100vh", color:"#ECE7DC", fontFamily:"'DM Sans',system-ui,sans-serif" }}>
 
-      <div style={{ background:"#090d1e", borderBottom:"1px solid #262B3A", padding:"12px 16px", position:"sticky", top:0, zIndex:60, display:"flex", alignItems:"center", gap:10 }}>
+      <div style={{ background:"#0D1015", borderBottom:"1px solid #262B3A", padding:"12px 16px", position:"sticky", top:0, zIndex:60, display:"flex", alignItems:"center", gap:10 }}>
         <div style={{ width:32, height:32, borderRadius:8, background:"linear-gradient(135deg,#C9A24B,#E0B85C)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>👪</div>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:13, fontWeight:800, fontFamily:"'Fraunces',serif" }}>Parent Dashboard</div>
@@ -1418,6 +1419,7 @@ function ParentApp({ user, api, onLogout }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -1546,9 +1548,10 @@ export default function App() {
 
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#0A0D12;} ::-webkit-scrollbar{width:3px;height:3px;} ::-webkit-scrollbar-track{background:#12161F;} ::-webkit-scrollbar-thumb{background:#262B3A;border-radius:3px;} input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4);} select option{background:#12161F;color:#ECE7DC;} input::placeholder{color:#4B5563;}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#05060A;} ::-webkit-scrollbar{width:3px;height:3px;} ::-webkit-scrollbar-track{background:#12161F;} ::-webkit-scrollbar-thumb{background:#262B3A;border-radius:3px;} input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4);} select option{background:#12161F;color:#ECE7DC;} input::placeholder{color:#4B5563;} @media(min-width:640px){ .app-shell{box-shadow:0 0 80px #00000090;} }`}</style>
 
-      <div style={{ background:"#0A0D12", minHeight:"100vh", color:"#ECE7DC", fontFamily:"'DM Sans',system-ui,sans-serif", paddingBottom:68 }}>
+      <div style={{ background:"#05060A", minHeight:"100vh" }}>
+      <div className="app-shell" style={{ maxWidth:560, margin:"0 auto", position:"relative", background:"#0A0D12", minHeight:"100vh", color:"#ECE7DC", fontFamily:"'DM Sans',system-ui,sans-serif", paddingBottom:68 }}>
 
         {/* Header */}
         <div style={{ background:"#0D1015", borderBottom:"1px solid #262B3A", padding:"10px 16px", position:"sticky", top:0, zIndex:60 }}>
@@ -1575,7 +1578,7 @@ export default function App() {
         )}
 
         {/* Bottom Nav */}
-        <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"#0A0D12", borderTop:"1px solid #262B3A", display:"flex", zIndex:60 }}>
+        <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:560, background:"#0A0D12", borderTop:"1px solid #262B3A", display:"flex", zIndex:60 }}>
           {TABS.map(({ id, icon, label }) => {
             const active = tab === id;
             return (
@@ -1587,6 +1590,7 @@ export default function App() {
             );
           })}
         </div>
+      </div>
       </div>
     </>
   );
