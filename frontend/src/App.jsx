@@ -33,7 +33,7 @@ const STREAMS_FOR_CLASS = (cls) => {
 };
 
 // ─── SHARED STYLES ────────────────────────────────────────────────────────────
-const card = { background:"#0d1326", border:"1px solid #1e2a4a", borderRadius:12, padding:16 };
+const card = { background:"#0d1326", border:"1px solid #1e2a4a", borderRadius:12, padding:16, color:"#e2e8f0", fontFamily:"inherit" };
 const inp  = { background:"#080c18", border:"1px solid #1e2a4a", borderRadius:8, padding:"9px 12px", color:"#e2e8f0", fontSize:13, fontFamily:"inherit", width:"100%", outline:"none" };
 const lbl  = { fontSize:10, color:"#475569", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4, display:"block" };
 const btn  = (color="#22d3ee") => ({ background:`${color}22`, border:`1px solid ${color}55`, borderRadius:8, padding:"9px 14px", color, fontSize:13, fontFamily:"inherit", cursor:"pointer", fontWeight:600 });
