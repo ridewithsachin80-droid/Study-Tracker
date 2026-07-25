@@ -11,10 +11,10 @@ const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 const LEVEL_NAMES = ["","Spark","Scout","Scholar","Achiever","Champion","Expert","Master","Legend","Elite","Titan"];
 const LEVEL_THRESHOLDS = [0,200,500,1000,2000,3500,5500,8000,11000,15000];
 const STATUS_CFG = [
-  { label:"Not Started", short:"–",  bg:"#0d1326", text:"#475569", border:"#1e2a4a" },
+  { label:"Not Started", short:"–",  bg:"#12161F", text:"#6B7280", border:"#262B3A" },
   { label:"In Progress",  short:"▶",  bg:"#1c1202", text:"#fbbf24", border:"#78350f" },
   { label:"Completed",    short:"✓",  bg:"#022c14", text:"#4ade80", border:"#14532d" },
-  { label:"Revised",      short:"★",  bg:"#031527", text:"#22d3ee", border:"#0e4f6e" },
+  { label:"Revised",      short:"★",  bg:"#031527", text:"#C9A24B", border:"#0e4f6e" },
 ];
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const TEST_TYPES = ["Class Test","Weekly Test","Unit Test","Phase Test","Half-Yearly","Mock Test","Board Exam"];
@@ -33,10 +33,10 @@ const STREAMS_FOR_CLASS = (cls) => {
 };
 
 // ─── SHARED STYLES ────────────────────────────────────────────────────────────
-const card = { background:"#0d1326", border:"1px solid #1e2a4a", borderRadius:12, padding:16, color:"#e2e8f0", fontFamily:"inherit" };
-const inp  = { background:"#080c18", border:"1px solid #1e2a4a", borderRadius:8, padding:"9px 12px", color:"#e2e8f0", fontSize:13, fontFamily:"inherit", width:"100%", outline:"none" };
-const lbl  = { fontSize:10, color:"#475569", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4, display:"block" };
-const btn  = (color="#22d3ee") => ({ background:`${color}22`, border:`1px solid ${color}55`, borderRadius:8, padding:"9px 14px", color, fontSize:13, fontFamily:"inherit", cursor:"pointer", fontWeight:600 });
+const card = { background:"#12161F", border:"1px solid #262B3A", borderRadius:12, padding:16, color:"#ECE7DC", fontFamily:"inherit" };
+const inp  = { background:"#0D1015", border:"1px solid #262B3A", borderRadius:8, padding:"9px 12px", color:"#ECE7DC", fontSize:13, fontFamily:"inherit", width:"100%", outline:"none" };
+const lbl  = { fontSize:10, color:"#6B7280", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4, display:"block" };
+const btn  = (color="#C9A24B") => ({ background:`${color}22`, border:`1px solid ${color}55`, borderRadius:8, padding:"9px 14px", color, fontSize:13, fontFamily:"inherit", cursor:"pointer", fontWeight:600 });
 
 // ─── API HELPER ───────────────────────────────────────────────────────────────
 function useApi(token) {
@@ -56,7 +56,7 @@ function useApi(token) {
 function XpToast({ msg, onDone }) {
   useEffect(() => { const t = setTimeout(onDone, 2200); return () => clearTimeout(t); }, [onDone]);
   return (
-    <div style={{ position:"fixed", bottom:90, left:"50%", transform:"translateX(-50%)", background:"#0d1326", border:"1px solid #22d3ee55", borderRadius:12, padding:"10px 20px", zIndex:999, display:"flex", alignItems:"center", gap:8, fontSize:13, color:"#22d3ee", boxShadow:"0 4px 20px #00000066" }}>
+    <div style={{ position:"fixed", bottom:90, left:"50%", transform:"translateX(-50%)", background:"#12161F", border:"1px solid #C9A24B55", borderRadius:12, padding:"10px 20px", zIndex:999, display:"flex", alignItems:"center", gap:8, fontSize:13, color:"#C9A24B", boxShadow:"0 4px 20px #00000066" }}>
       ⚡ {msg}
     </div>
   );
@@ -66,7 +66,7 @@ function XpToast({ msg, onDone }) {
 function BadgeToast({ badge, onDone }) {
   useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, [onDone]);
   return (
-    <div style={{ position:"fixed", bottom:90, left:"50%", transform:"translateX(-50%)", background:"#0d1326", border:"1px solid #fbbf2455", borderRadius:12, padding:"12px 20px", zIndex:999, textAlign:"center", boxShadow:"0 4px 20px #00000066" }}>
+    <div style={{ position:"fixed", bottom:90, left:"50%", transform:"translateX(-50%)", background:"#12161F", border:"1px solid #fbbf2455", borderRadius:12, padding:"12px 20px", zIndex:999, textAlign:"center", boxShadow:"0 4px 20px #00000066" }}>
       <div style={{ fontSize:28 }}>{badge.emoji}</div>
       <div style={{ fontSize:12, fontWeight:700, color:"#fbbf24" }}>Badge Unlocked!</div>
       <div style={{ fontSize:11, color:"#94a3b8", marginTop:2 }}>{badge.label}</div>
@@ -75,16 +75,29 @@ function BadgeToast({ badge, onDone }) {
 }
 
 // ─── LEVEL BAR ────────────────────────────────────────────────────────────────
+function LevelMedallion({ level, xp, size=44 }) {
+  const cur  = LEVEL_THRESHOLDS[Math.min(level-1, LEVEL_THRESHOLDS.length-1)] || 0;
+  const next = LEVEL_THRESHOLDS[Math.min(level, LEVEL_THRESHOLDS.length-1)] || xp;
+  const pct  = next > cur ? Math.min(100, Math.round((xp-cur)/(next-cur)*100)) : 100;
+  return (
+    <div style={{ width:size, height:size, borderRadius:"50%", background:`conic-gradient(#C9A24B ${pct}%, #262B3A ${pct}%)`, display:"flex", alignItems:"center", justifyContent:"center", padding:Math.max(2,size*0.06), flexShrink:0 }}>
+      <div style={{ width:"100%", height:"100%", borderRadius:"50%", background:"#12161F", border:"1px solid #0A0D12", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <span style={{ fontFamily:"'Fraunces',serif", fontWeight:700, fontSize:size*0.36, color:"#ECE7DC", lineHeight:1 }}>{level}</span>
+      </div>
+    </div>
+  );
+}
+
 function LevelBar({ xp, level }) {
   const cur = LEVEL_THRESHOLDS[Math.min(level-1, LEVEL_THRESHOLDS.length-1)] || 0;
   const next = LEVEL_THRESHOLDS[Math.min(level, LEVEL_THRESHOLDS.length-1)] || xp;
   const pct  = next > cur ? Math.round((xp-cur)/(next-cur)*100) : 100;
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8, flex:1 }}>
-      <div style={{ flex:1, height:4, background:"#1e2a4a", borderRadius:2, overflow:"hidden" }}>
-        <div style={{ width:`${pct}%`, height:"100%", background:"linear-gradient(90deg,#22d3ee,#a78bfa)", borderRadius:2, transition:"width 0.5s" }} />
+      <div style={{ flex:1, height:4, background:"#262B3A", borderRadius:2, overflow:"hidden" }}>
+        <div style={{ width:`${pct}%`, height:"100%", background:"linear-gradient(90deg,#C9A24B,#E0B85C)", borderRadius:2, transition:"width 0.5s" }} />
       </div>
-      <span style={{ fontSize:9, color:"#475569", whiteSpace:"nowrap" }}>{xp} XP</span>
+      <span style={{ fontSize:9, color:"#6B7280", whiteSpace:"nowrap" }}>{xp} XP</span>
     </div>
   );
 }
@@ -116,21 +129,21 @@ function AuthScreen({ onAuth }) {
   }
 
   return (
-    <div style={{ minHeight:"100vh", background:"#06080f", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20 }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;} body{margin:0;background:#06080f;} input::placeholder,select option{color:#475569;} select option{background:#0d1326;}`}</style>
+    <div style={{ minHeight:"100vh", background:"#0A0D12", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20 }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;} body{margin:0;background:#0A0D12;} input::placeholder,select option{color:#6B7280;} select option{background:#12161F;}`}</style>
 
       {/* Logo */}
       <div style={{ textAlign:"center", marginBottom:32 }}>
-        <div style={{ width:64, height:64, borderRadius:16, background:"linear-gradient(135deg,#22d3ee,#a78bfa)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, margin:"0 auto 12px" }}>🎓</div>
-        <div style={{ fontFamily:"'Sora',sans-serif", fontSize:22, fontWeight:800, color:"#e2e8f0" }}>StudyTracker</div>
-        <div style={{ fontSize:11, color:"#334155", marginTop:4 }}>CBSE · ICSE · Karnataka State Board</div>
+        <div style={{ width:64, height:64, borderRadius:16, background:"linear-gradient(135deg,#C9A24B,#E0B85C)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, margin:"0 auto 12px" }}>🎓</div>
+        <div style={{ fontFamily:"'Fraunces',serif", fontSize:22, fontWeight:800, color:"#ECE7DC" }}>StudyTracker</div>
+        <div style={{ fontSize:11, color:"#4B5563", marginTop:4 }}>CBSE · ICSE · Karnataka State Board</div>
       </div>
 
       <div style={{ ...card, width:"100%", maxWidth:420 }}>
         {/* Tabs */}
-        <div style={{ display:"flex", marginBottom:20, background:"#080c18", borderRadius:8, padding:4 }}>
+        <div style={{ display:"flex", marginBottom:20, background:"#0D1015", borderRadius:8, padding:4 }}>
           {["login","register"].map(m => (
-            <button key={m} onClick={() => { setMode(m); setErr(""); }} style={{ flex:1, background: mode===m ? "#1e2a4a" : "transparent", border:"none", borderRadius:6, padding:"8px 0", cursor:"pointer", fontSize:13, fontWeight:600, color: mode===m ? "#22d3ee" : "#475569", fontFamily:"inherit" }}>
+            <button key={m} onClick={() => { setMode(m); setErr(""); }} style={{ flex:1, background: mode===m ? "#262B3A" : "transparent", border:"none", borderRadius:6, padding:"8px 0", cursor:"pointer", fontSize:13, fontWeight:600, color: mode===m ? "#C9A24B" : "#6B7280", fontFamily:"inherit" }}>
               {m === "login" ? "Sign In" : "Register"}
             </button>
           ))}
@@ -141,7 +154,7 @@ function AuthScreen({ onAuth }) {
             <>
               <div style={{ display:"flex", gap:8, marginBottom:16 }}>
                 {[{ id:"student", label:"🎓 Student" }, { id:"parent", label:"👪 Parent" }].map(r => (
-                  <button key={r.id} type="button" onClick={() => setRole(r.id)} style={{ flex:1, background: role===r.id ? "#22d3ee22" : "#080c18", border: `1px solid ${role===r.id ? "#22d3ee55" : "#1e2a4a"}`, borderRadius:8, padding:"8px 0", cursor:"pointer", fontSize:12, fontWeight:600, color: role===r.id ? "#22d3ee" : "#475569", fontFamily:"inherit" }}>
+                  <button key={r.id} type="button" onClick={() => setRole(r.id)} style={{ flex:1, background: role===r.id ? "#C9A24B22" : "#0D1015", border: `1px solid ${role===r.id ? "#C9A24B55" : "#262B3A"}`, borderRadius:8, padding:"8px 0", cursor:"pointer", fontSize:12, fontWeight:600, color: role===r.id ? "#C9A24B" : "#6B7280", fontFamily:"inherit" }}>
                     {r.label}
                   </button>
                 ))}
@@ -183,7 +196,7 @@ function AuthScreen({ onAuth }) {
               )}
 
               {role === "parent" && (
-                <div style={{ background:"#080c18", border:"1px solid #1e2a4a", borderRadius:8, padding:"10px 12px", fontSize:11.5, color:"#64748b", marginBottom:12, lineHeight:1.5 }}>
+                <div style={{ background:"#0D1015", border:"1px solid #262B3A", borderRadius:8, padding:"10px 12px", fontSize:11.5, color:"#64748b", marginBottom:12, lineHeight:1.5 }}>
                   After creating your account, your child can share a one-time link code from their app so you can view their progress. You won't be able to edit anything — just view.
                 </div>
               )}
@@ -198,13 +211,13 @@ function AuthScreen({ onAuth }) {
 
           {err && <div style={{ background:"#3b0a0a", border:"1px solid #7f1d1d", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#fca5a5", marginBottom:12 }}>{err}</div>}
 
-          <button type="submit" disabled={loading} style={{ ...btn("#22d3ee"), width:"100%", padding:"12px 0", fontSize:14, opacity: loading ? 0.6 : 1 }}>
+          <button type="submit" disabled={loading} style={{ ...btn("#C9A24B"), width:"100%", padding:"12px 0", fontSize:14, opacity: loading ? 0.6 : 1 }}>
             {loading ? "Please wait…" : mode === "login" ? "Sign In →" : "Create Account →"}
           </button>
         </form>
       </div>
 
-      <div style={{ marginTop:16, fontSize:11, color:"#334155", textAlign:"center" }}>
+      <div style={{ marginTop:16, fontSize:11, color:"#4B5563", textAlign:"center" }}>
         By signing up you agree to our terms. Your data is stored securely.
       </div>
     </div>
@@ -230,7 +243,7 @@ function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
   ).slice(0, 6);
 
   const avgScore = tests.length ? Math.round(tests.reduce((a,t) => a + (t.score/t.max_score*100), 0)/tests.length) : null;
-  const tipColor = (v) => !v ? "#475569" : v >= 80 ? "#4ade80" : v >= 60 ? "#fbbf24" : "#f87171";
+  const tipColor = (v) => !v ? "#6B7280" : v >= 80 ? "#4ade80" : v >= 60 ? "#fbbf24" : "#f87171";
 
   // level progress
   const curThr = LEVEL_THRESHOLDS[Math.min(user.level-1, LEVEL_THRESHOLDS.length-1)] || 0;
@@ -240,27 +253,30 @@ function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
   return (
     <div style={{ padding:16, display:"flex", flexDirection:"column", gap:12 }}>
       {/* Welcome card */}
-      <div style={{ ...card, background:"linear-gradient(135deg,#0d1326,#0a1628)", borderColor:"#22d3ee33" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-          <div>
-            <div style={{ fontSize:11, color:"#475569" }}>Welcome back,</div>
-            <div style={{ fontSize:18, fontWeight:800, fontFamily:"'Sora',sans-serif", color:"#e2e8f0" }}>{user.name.split(" ")[0]} 👋</div>
-            <div style={{ fontSize:10, color:"#475569", marginTop:2 }}>
-              {BOARDS.find(b => b.id===user.board)?.label} · Class {user.class_num}
-              {user.stream ? ` · ${user.stream.charAt(0).toUpperCase()+user.stream.slice(1)}` : ""}
+      <div style={{ ...card, background:"linear-gradient(160deg,#12161F,#0D1015)", borderColor:"#262B3A" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <LevelMedallion level={user.level||1} xp={user.xp||0} size={52} />
+            <div>
+              <div style={{ fontSize:10, color:"#6B7280", letterSpacing:"0.04em" }}>Welcome back,</div>
+              <div style={{ fontSize:21, fontWeight:600, fontFamily:"'Fraunces',serif", color:"#ECE7DC", lineHeight:1.15 }}>{user.name.split(" ")[0]}</div>
+              <div style={{ fontSize:10, color:"#6B7280", marginTop:2 }}>
+                {BOARDS.find(b => b.id===user.board)?.label} · Class {user.class_num}
+                {user.stream ? ` · ${user.stream.charAt(0).toUpperCase()+user.stream.slice(1)}` : ""}
+              </div>
             </div>
           </div>
           <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:11, color:"#fbbf24", fontWeight:700 }}>🔥 {user.streak} day streak</div>
-            <div style={{ fontSize:10, color:"#475569", marginTop:2 }}>Lv.{user.level} {LEVEL_NAMES[user.level]||"Titan"}</div>
+            <div style={{ fontSize:12, color:"#fbbf24", fontWeight:700 }}>🔥 {user.streak}</div>
+            <div style={{ fontSize:9, color:"#6B7280", marginTop:1 }}>day streak</div>
           </div>
         </div>
-        <div style={{ marginTop:12 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", fontSize:10, color:"#475569", marginBottom:4 }}>
-            <span>Level Progress</span><span>{user.xp} / {nextThr} XP</span>
+        <div style={{ marginTop:14 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", fontSize:9.5, color:"#6B7280", marginBottom:4, letterSpacing:"0.03em" }}>
+            <span>{LEVEL_NAMES[user.level]||"Spark"}</span><span>{user.xp} / {nextThr} XP</span>
           </div>
-          <div style={{ height:6, background:"#1e2a4a", borderRadius:3, overflow:"hidden" }}>
-            <div style={{ width:`${lvlPct}%`, height:"100%", background:"linear-gradient(90deg,#22d3ee,#a78bfa)", borderRadius:3, transition:"width 0.5s" }} />
+          <div style={{ height:3, background:"#262B3A", borderRadius:2, overflow:"hidden" }}>
+            <div style={{ width:`${lvlPct}%`, height:"100%", background:"linear-gradient(90deg,#C9A24B,#E0B85C)", borderRadius:2, transition:"width 0.5s" }} />
           </div>
         </div>
       </div>
@@ -268,14 +284,14 @@ function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
       {/* Stats row */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
         {[
-          { v:`${pct}%`, l:"Overall", c:"#22d3ee" },
+          { v:`${pct}%`, l:"Overall", c:"#C9A24B" },
           { v:`${done+revised}`, l:"Completed", c:"#4ade80" },
           { v:inProg, l:"In Progress", c:"#fbbf24" },
           { v: avgScore ? `${avgScore}%` : "—", l:"Avg Score", c: tipColor(avgScore) },
         ].map(({ v,l,c }) => (
-          <div key={l} style={{ ...card, textAlign:"center", padding:10 }}>
-            <div style={{ fontSize:18, fontWeight:800, color:c, fontFamily:"'Sora',sans-serif" }}>{v}</div>
-            <div style={{ fontSize:9, color:"#475569", marginTop:1 }}>{l}</div>
+          <div key={l} style={{ ...card, textAlign:"center", padding:"12px 8px" }}>
+            <div style={{ fontSize:19, fontWeight:600, color:c, fontFamily:"'Fraunces',serif" }}>{v}</div>
+            <div style={{ fontSize:8.5, color:"#6B7280", marginTop:2, letterSpacing:"0.03em", textTransform:"uppercase" }}>{l}</div>
           </div>
         ))}
       </div>
@@ -284,10 +300,10 @@ function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
       <div style={card}>
         <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, marginBottom:8 }}>
           <span style={{ fontWeight:700 }}>Overall Progress</span>
-          <span style={{ color:"#22d3ee" }}>{done+revised}/{totalCh} chapters</span>
+          <span style={{ color:"#C9A24B" }}>{done+revised}/{totalCh} chapters</span>
         </div>
-        <div style={{ height:8, background:"#1e2a4a", borderRadius:4, overflow:"hidden" }}>
-          <div style={{ width:`${pct}%`, height:"100%", background:"linear-gradient(90deg,#22d3ee,#a78bfa)", borderRadius:4, transition:"width 0.5s" }} />
+        <div style={{ height:5, background:"#262B3A", borderRadius:3, overflow:"hidden" }}>
+          <div style={{ width:`${pct}%`, height:"100%", background:"linear-gradient(90deg,#C9A24B,#E0B85C)", borderRadius:3, transition:"width 0.5s" }} />
         </div>
       </div>
 
@@ -298,15 +314,15 @@ function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
             <span>🔄 Revision Due</span>
             <span style={{ fontSize:10, color:"#f87171", background:"#3b0a0a", padding:"1px 6px", borderRadius:10 }}>{revisionDue.length}</span>
           </div>
-          <div style={{ fontSize:11, color:"#475569", marginBottom:8 }}>Completed 7+ days ago — time to revise!</div>
+          <div style={{ fontSize:11, color:"#6B7280", marginBottom:8 }}>Completed 7+ days ago — time to revise!</div>
           <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
             {revisionDue.map(ch => (
-              <div key={ch.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"#080c18", borderRadius:8, padding:"8px 10px" }}>
+              <div key={ch.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"#0D1015", borderRadius:8, padding:"8px 10px" }}>
                 <div>
-                  <div style={{ fontSize:11, color:"#e2e8f0" }}>{ch.name}</div>
+                  <div style={{ fontSize:11, color:"#ECE7DC" }}>{ch.name}</div>
                   <div style={{ fontSize:10, color:ch.subjectColor }}>{ch.subjectName}</div>
                 </div>
-                <button onClick={() => onStatusChange(ch.id, 3)} style={{ ...btn("#22d3ee"), padding:"4px 10px", fontSize:10 }}>Revise ★</button>
+                <button onClick={() => onStatusChange(ch.id, 3)} style={{ ...btn("#C9A24B"), padding:"4px 10px", fontSize:10 }}>Revise ★</button>
               </div>
             ))}
           </div>
@@ -315,19 +331,19 @@ function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
 
       {/* Subject progress */}
       <div style={card}>
-        <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>Subject Progress</div>
-        {subjects.map(s => {
+        <div style={{ fontWeight:700, fontSize:13, marginBottom:12 }}>Subject Progress</div>
+        {subjects.map((s,idx) => {
           const total = s.chapters.length;
           const done2 = s.chapters.filter(c => (progress[c.id]?.status||0) >= 2).length;
           const p = total ? Math.round(done2/total*100) : 0;
           return (
-            <div key={s.id} style={{ marginBottom:10 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, marginBottom:3 }}>
-                <span>{s.icon} {s.name}</span>
-                <span style={{ color:s.color, fontWeight:700 }}>{p}%</span>
+            <div key={s.id} style={{ marginBottom:12, paddingBottom:12, borderBottom: idx<subjects.length-1 ? "1px solid #262B3A" : "none" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:5 }}>
+                <span style={{ fontSize:12, color:"#ECE7DC" }}>{s.icon} {s.name}</span>
+                <span style={{ fontFamily:"'Fraunces',serif", fontSize:15, fontWeight:600, color:"#C9A24B" }}>{p}<span style={{fontSize:10,color:"#6B7280"}}>%</span></span>
               </div>
-              <div style={{ height:5, background:"#1e2a4a", borderRadius:3 }}>
-                <div style={{ width:`${p}%`, height:"100%", background:s.color, borderRadius:3, transition:"width 0.4s", opacity:0.85 }} />
+              <div style={{ height:3, background:"#262B3A", borderRadius:2 }}>
+                <div style={{ width:`${p}%`, height:"100%", background:s.color, borderRadius:2, transition:"width 0.4s" }} />
               </div>
             </div>
           );
@@ -344,7 +360,7 @@ function renderMarkdown(md) {
   const inline = (t) => t
     .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
     .replace(/\*(.+?)\*/g, "<i>$1</i>")
-    .replace(/`(.+?)`/g, "<code style='background:#080c18;padding:1px 5px;border-radius:4px;color:#22d3ee'>$1</code>");
+    .replace(/`(.+?)`/g, "<code style='background:#0D1015;padding:1px 5px;border-radius:4px;color:#C9A24B'>$1</code>");
   lines.forEach((line) => {
     const l = line.trim();
     if (!l) { if (list) { blocks.push(list); list = null; } return; }
@@ -352,7 +368,7 @@ function renderMarkdown(md) {
     if (h) {
       if (list) { blocks.push(list); list = null; }
       const size = h[1].length===1?18:h[1].length===2?15:13;
-      blocks.push(<div key={blocks.length} style={{ fontWeight:800, fontSize:size, fontFamily:"'Sora',sans-serif", margin:"14px 0 6px", color:"#e2e8f0" }} dangerouslySetInnerHTML={{__html:inline(h[2])}} />);
+      blocks.push(<div key={blocks.length} style={{ fontWeight:800, fontSize:size, fontFamily:"'Fraunces',serif", margin:"14px 0 6px", color:"#ECE7DC" }} dangerouslySetInnerHTML={{__html:inline(h[2])}} />);
       return;
     }
     if (/^[-*]\s+/.test(l)) {
@@ -489,31 +505,31 @@ function ChapterStudyPanel({ api, chapter, subjectColor, onClose }) {
   }
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"#06080fee", zIndex:100, overflowY:"auto", padding:16 }}>
+    <div style={{ position:"fixed", inset:0, background:"#0A0D12ee", zIndex:100, overflowY:"auto", padding:16 }}>
       <div style={{ maxWidth:560, margin:"0 auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-          <button onClick={onClose} style={btn("#475569")}>← Close</button>
+          <button onClick={onClose} style={btn("#6B7280")}>← Close</button>
           {view!=="paper-take" && (
             <div style={{ display:"flex", gap:6 }}>
               {view!=="notes" && (
-                <button onClick={() => setView("notes")} style={{ ...btn(subjectColor||"#22d3ee"), fontSize:11 }}>📖 Notes</button>
+                <button onClick={() => setView("notes")} style={{ ...btn(subjectColor||"#C9A24B"), fontSize:11 }}>📖 Notes</button>
               )}
               {view!=="doubt" && (
-                <button onClick={() => setView("doubt")} style={{ ...btn("#a78bfa"), fontSize:11 }}>💬 Ask a Doubt</button>
+                <button onClick={() => setView("doubt")} style={{ ...btn("#E0B85C"), fontSize:11 }}>💬 Ask a Doubt</button>
               )}
             </div>
           )}
         </div>
 
-        <div style={{ fontSize:16, fontWeight:800, fontFamily:"'Sora',sans-serif", marginBottom:14 }}>{chapter.name}</div>
+        <div style={{ fontSize:16, fontWeight:800, fontFamily:"'Fraunces',serif", marginBottom:14 }}>{chapter.name}</div>
 
         {loading ? (
-          <div style={{ color:"#475569", fontSize:13 }}>Loading…</div>
+          <div style={{ color:"#6B7280", fontSize:13 }}>Loading…</div>
         ) : view === "notes" ? (
           <>
             <div style={card}>
               {content?.available ? renderMarkdown(content.body) : (
-                <div style={{ fontSize:12.5, color:"#475569", lineHeight:1.6 }}>
+                <div style={{ fontSize:12.5, color:"#6B7280", lineHeight:1.6 }}>
                   Study notes for this chapter aren't published yet. Once your textbook content is added, they'll appear here.
                 </div>
               )}
@@ -523,7 +539,7 @@ function ChapterStudyPanel({ api, chapter, subjectColor, onClose }) {
                 <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Practice Paper</div>
                 <div style={{ display:"flex", gap:8 }}>
                   {paperInfo.neet>0 && <button onClick={() => startPaper("neet")} disabled={busy} style={{ ...btn("#4ade80"), flex:1 }}>NEET Format ({paperInfo.neet} Qs)</button>}
-                  {paperInfo.cbse>0 && <button onClick={() => startPaper("cbse")} disabled={busy} style={{ ...btn("#22d3ee"), flex:1 }}>CBSE Format ({paperInfo.cbse} Qs)</button>}
+                  {paperInfo.cbse>0 && <button onClick={() => startPaper("cbse")} disabled={busy} style={{ ...btn("#C9A24B"), flex:1 }}>CBSE Format ({paperInfo.cbse} Qs)</button>}
                 </div>
               </div>
             )}
@@ -538,14 +554,14 @@ function ChapterStudyPanel({ api, chapter, subjectColor, onClose }) {
                 <div style={{ fontSize:12.5, marginBottom:10 }}>{i+1}. {q.text}</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                   {q.options.map((opt,oi) => (
-                    <button key={oi} onClick={() => setAnsMap(p => ({...p,[q.id]:oi}))} style={{ textAlign:"left", padding:"8px 10px", borderRadius:8, border:`1px solid ${ansMap[q.id]===oi?"#22d3ee":"#1e2a4a"}`, background: ansMap[q.id]===oi?"#22d3ee22":"#080c18", color:"#e2e8f0", fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
+                    <button key={oi} onClick={() => setAnsMap(p => ({...p,[q.id]:oi}))} style={{ textAlign:"left", padding:"8px 10px", borderRadius:8, border:`1px solid ${ansMap[q.id]===oi?"#C9A24B":"#262B3A"}`, background: ansMap[q.id]===oi?"#C9A24B22":"#0D1015", color:"#ECE7DC", fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
                       {opt}
                     </button>
                   ))}
                 </div>
               </div>
             ))}
-            <button onClick={submitPaper} disabled={busy} style={{ ...btn("#22d3ee"), width:"100%", padding:"12px 0", marginTop:6 }}>
+            <button onClick={submitPaper} disabled={busy} style={{ ...btn("#C9A24B"), width:"100%", padding:"12px 0", marginTop:6 }}>
               {busy ? "Submitting…" : `Submit (${Object.keys(ansMap).length}/${paper.questions.length} answered)`}
             </button>
           </div>
@@ -553,7 +569,7 @@ function ChapterStudyPanel({ api, chapter, subjectColor, onClose }) {
           <div>
             <div style={{ ...card, textAlign:"center", marginBottom:14 }}>
               <div style={{ fontSize:28, fontWeight:800, color: result.score>=0 ? "#4ade80" : "#f87171" }}>{result.score} / {result.maxScore}</div>
-              <div style={{ fontSize:11, color:"#475569", marginTop:4 }}>{result.correctCt} correct · {result.wrongCt} wrong · {result.skippedCt} skipped · +{result.xpEarned} XP</div>
+              <div style={{ fontSize:11, color:"#6B7280", marginTop:4 }}>{result.correctCt} correct · {result.wrongCt} wrong · {result.skippedCt} skipped · +{result.xpEarned} XP</div>
             </div>
             {paper.questions.map((q,i) => {
               const g = result.graded.find(x => x.questionId===q.id);
@@ -563,9 +579,9 @@ function ChapterStudyPanel({ api, chapter, subjectColor, onClose }) {
                   {q.options.map((opt,oi) => {
                     const isCorrect = oi===g.correctIndex;
                     const isPicked = oi===g.selectedIndex;
-                    const bg = isCorrect ? "#022c14" : (isPicked ? "#3b0a0a" : "#080c18");
-                    const border = isCorrect ? "#14532d" : (isPicked ? "#7f1d1d" : "#1e2a4a");
-                    return <div key={oi} style={{ padding:"6px 10px", borderRadius:8, border:`1px solid ${border}`, background:bg, fontSize:11.5, marginBottom:4, color:"#e2e8f0" }}>{opt}{isCorrect?" ✓":""}{isPicked&&!isCorrect?" ✕":""}</div>;
+                    const bg = isCorrect ? "#022c14" : (isPicked ? "#3b0a0a" : "#0D1015");
+                    const border = isCorrect ? "#14532d" : (isPicked ? "#7f1d1d" : "#262B3A");
+                    return <div key={oi} style={{ padding:"6px 10px", borderRadius:8, border:`1px solid ${border}`, background:bg, fontSize:11.5, marginBottom:4, color:"#ECE7DC" }}>{opt}{isCorrect?" ✓":""}{isPicked&&!isCorrect?" ✕":""}</div>;
                   })}
                 </div>
               );
@@ -575,31 +591,31 @@ function ChapterStudyPanel({ api, chapter, subjectColor, onClose }) {
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"#0d0a1f", border:"1px solid #4c1d95", borderRadius:8, padding:"8px 12px", marginBottom:14 }}>
               <div style={{ fontSize:11.5, color:"#c4b5fd" }}>Ask anything about "{chapter.name}" — by typing or speaking.</div>
-              <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#a78bfa", whiteSpace:"nowrap", marginLeft:8, cursor:"pointer" }}>
+              <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#E0B85C", whiteSpace:"nowrap", marginLeft:8, cursor:"pointer" }}>
                 <input type="checkbox" checked={autoRead} onChange={e => setAutoRead(e.target.checked)} />
                 🔊 Read aloud
               </label>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:14 }}>
-              {doubtMsgs.length === 0 && <div style={{ fontSize:11.5, color:"#475569" }}>No doubts asked yet for this chapter.</div>}
+              {doubtMsgs.length === 0 && <div style={{ fontSize:11.5, color:"#6B7280" }}>No doubts asked yet for this chapter.</div>}
               {doubtMsgs.map((m,i) => (
                 <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:6, alignSelf: m.role==='q'?'flex-end':'flex-start', maxWidth:"85%" }}>
-                  <div style={{ background: m.role==='q'?'#22d3ee22':'#0d1326', border:`1px solid ${m.role==='q'?'#22d3ee55':'#1e2a4a'}`, borderRadius:10, padding:"8px 12px", fontSize:12.5, color:"#e2e8f0", whiteSpace:"pre-wrap", lineHeight:1.5 }}>
+                  <div style={{ background: m.role==='q'?'#C9A24B22':'#12161F', border:`1px solid ${m.role==='q'?'#C9A24B55':'#262B3A'}`, borderRadius:10, padding:"8px 12px", fontSize:12.5, color:"#ECE7DC", whiteSpace:"pre-wrap", lineHeight:1.5 }}>
                     {m.text}
                   </div>
                   {m.role==='a' && (
-                    <button onClick={() => speak(m.text)} title="Read aloud" style={{ background:"transparent", border:"none", cursor:"pointer", color:"#475569", fontSize:14, flexShrink:0 }}>🔊</button>
+                    <button onClick={() => speak(m.text)} title="Read aloud" style={{ background:"transparent", border:"none", cursor:"pointer", color:"#6B7280", fontSize:14, flexShrink:0 }}>🔊</button>
                   )}
                 </div>
               ))}
-              {doubtBusy && <div style={{ alignSelf:'flex-start', fontSize:11.5, color:"#475569" }}>Thinking…</div>}
+              {doubtBusy && <div style={{ alignSelf:'flex-start', fontSize:11.5, color:"#6B7280" }}>Thinking…</div>}
             </div>
-            <div style={{ display:"flex", gap:8, position:"sticky", bottom:0, background:"#06080f", paddingTop:8 }}>
-              <button onClick={toggleRecording} disabled={transcribing} title={recording?"Stop recording":"Speak your doubt"} style={{ width:38, height:38, borderRadius:8, border:`1px solid ${recording?"#f87171":"#1e2a4a"}`, background: recording?"#3b0a0a":"#0d1326", color: recording?"#f87171":"#a78bfa", fontSize:16, cursor:"pointer", flexShrink:0 }}>
+            <div style={{ display:"flex", gap:8, position:"sticky", bottom:0, background:"#0A0D12", paddingTop:8 }}>
+              <button onClick={toggleRecording} disabled={transcribing} title={recording?"Stop recording":"Speak your doubt"} style={{ width:38, height:38, borderRadius:8, border:`1px solid ${recording?"#f87171":"#262B3A"}`, background: recording?"#3b0a0a":"#12161F", color: recording?"#f87171":"#E0B85C", fontSize:16, cursor:"pointer", flexShrink:0 }}>
                 {transcribing ? "…" : recording ? "⏹" : "🎤"}
               </button>
               <input style={{ ...inp, flex:1 }} value={doubtQ} onChange={e=>setDoubtQ(e.target.value)} onKeyDown={e => { if (e.key==='Enter') askDoubt(); }} placeholder={recording ? "Listening…" : "Type or tap 🎤 to speak…"} />
-              <button onClick={() => askDoubt()} disabled={doubtBusy || !doubtQ.trim()} style={{ ...btn("#a78bfa"), opacity: (doubtBusy||!doubtQ.trim())?0.6:1 }}>Ask</button>
+              <button onClick={() => askDoubt()} disabled={doubtBusy || !doubtQ.trim()} style={{ ...btn("#E0B85C"), opacity: (doubtBusy||!doubtQ.trim())?0.6:1 }}>Ask</button>
             </div>
           </div>
         )}
@@ -621,23 +637,23 @@ function SubjectsView({ subjects, progress, onStatusChange, api }) {
     const done = chapters.filter(c => (progress[c.id]?.status||0) >= 2).length;
     return (
       <div style={{ padding:16 }}>
-        <button onClick={() => setSelSub(null)} style={{ ...btn("#475569"), marginBottom:16, fontSize:12 }}>← Back</button>
+        <button onClick={() => setSelSub(null)} style={{ ...btn("#6B7280"), marginBottom:16, fontSize:12 }}>← Back</button>
         <div style={{ ...card, marginBottom:12 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
               <div style={{ fontSize:18 }}>{sub.icon}</div>
-              <div style={{ fontWeight:800, fontFamily:"'Sora',sans-serif", fontSize:15 }}>{sub.name}</div>
+              <div style={{ fontWeight:800, fontFamily:"'Fraunces',serif", fontSize:15 }}>{sub.name}</div>
             </div>
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:20, fontWeight:800, color:sub.color }}>{Math.round(done/chapters.length*100)||0}%</div>
-              <div style={{ fontSize:10, color:"#475569" }}>{done}/{chapters.length} done</div>
+              <div style={{ fontSize:10, color:"#6B7280" }}>{done}/{chapters.length} done</div>
             </div>
           </div>
           {/* type filter */}
           {sub.is_compet && (
             <div style={{ display:"flex", gap:6, marginTop:10 }}>
               {["all","cbse","neet"].map(f => (
-                <button key={f} onClick={() => setFilter(f)} style={{ ...btn(filter===f ? sub.color : "#475569"), padding:"4px 10px", fontSize:10 }}>
+                <button key={f} onClick={() => setFilter(f)} style={{ ...btn(filter===f ? sub.color : "#6B7280"), padding:"4px 10px", fontSize:10 }}>
                   {f.toUpperCase()}
                 </button>
               ))}
@@ -652,13 +668,13 @@ function SubjectsView({ subjects, progress, onStatusChange, api }) {
             return (
               <div key={ch.id} style={{ background:cfg.bg, border:`1px solid ${cfg.border}`, borderRadius:10, padding:"10px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div style={{ flex:1, marginRight:8 }}>
-                  <div style={{ fontSize:12, color:"#e2e8f0" }}>{i+1}. {ch.name}</div>
+                  <div style={{ fontSize:12, color:"#ECE7DC" }}>{i+1}. {ch.name}</div>
                   {ch.ch_type === "neet" && <div style={{ fontSize:9, color:"#4ade80", marginTop:2 }}>NEET Extra</div>}
                 </div>
                 <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-                  <button onClick={() => setStudyChapter(ch)} title="Study this chapter" style={{ width:26, height:26, borderRadius:6, border:"1px solid #1e2a4a", background:"#0d1326", cursor:"pointer", fontSize:12 }}>📖</button>
+                  <button onClick={() => setStudyChapter(ch)} title="Study this chapter" style={{ width:26, height:26, borderRadius:6, border:"1px solid #262B3A", background:"#12161F", cursor:"pointer", fontSize:12 }}>📖</button>
                   {STATUS_CFG.map((s,si) => (
-                    <button key={si} onClick={() => onStatusChange(ch.id, si)} title={s.label} style={{ width:26, height:26, borderRadius:6, border:`1px solid ${st===si ? s.border : "#1e2a4a"}`, background: st===si ? s.bg : "#0d1326", cursor:"pointer", color: st===si ? s.text : "#334155", fontSize:11 }}>
+                    <button key={si} onClick={() => onStatusChange(ch.id, si)} title={s.label} style={{ width:26, height:26, borderRadius:6, border:`1px solid ${st===si ? s.border : "#262B3A"}`, background: st===si ? s.bg : "#12161F", cursor:"pointer", color: st===si ? s.text : "#4B5563", fontSize:11 }}>
                       {s.short}
                     </button>
                   ))}
@@ -675,7 +691,7 @@ function SubjectsView({ subjects, progress, onStatusChange, api }) {
 
   return (
     <div style={{ padding:16, display:"flex", flexDirection:"column", gap:10 }}>
-      <div style={{ fontWeight:700, fontFamily:"'Sora',sans-serif", fontSize:15, marginBottom:4 }}>My Subjects</div>
+      <div style={{ fontWeight:700, fontFamily:"'Fraunces',serif", fontSize:15, marginBottom:4 }}>My Subjects</div>
       {subjects.map(s => {
         const total = s.chapters.length;
         const done  = s.chapters.filter(c => (progress[c.id]?.status||0) >= 2).length;
@@ -688,12 +704,12 @@ function SubjectsView({ subjects, progress, onStatusChange, api }) {
                 <div style={{ width:32, height:32, borderRadius:8, background:`${s.color}22`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>{s.icon}</div>
                 <div>
                   <div style={{ fontWeight:700, fontSize:13 }}>{s.name}</div>
-                  <div style={{ fontSize:10, color:"#475569" }}>{total} chapters{inPr > 0 ? ` · ${inPr} in progress` : ""}</div>
+                  <div style={{ fontSize:10, color:"#6B7280" }}>{total} chapters{inPr > 0 ? ` · ${inPr} in progress` : ""}</div>
                 </div>
               </div>
               <div style={{ fontSize:18, fontWeight:800, color:s.color }}>{pct}%</div>
             </div>
-            <div style={{ height:4, background:"#1e2a4a", borderRadius:2 }}>
+            <div style={{ height:4, background:"#262B3A", borderRadius:2 }}>
               <div style={{ width:`${pct}%`, height:"100%", background:s.color, borderRadius:2, opacity:0.85 }} />
             </div>
           </button>
@@ -720,8 +736,8 @@ function TestsView({ tests, subjects, onAdd, onDelete }) {
   return (
     <div style={{ padding:16, display:"flex", flexDirection:"column", gap:12 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div style={{ fontWeight:700, fontFamily:"'Sora',sans-serif", fontSize:15 }}>Test Results</div>
-        <button onClick={() => setShow(p => !p)} style={{ ...btn("#22d3ee"), padding:"6px 12px", fontSize:12 }}>+ Add</button>
+        <div style={{ fontWeight:700, fontFamily:"'Fraunces',serif", fontSize:15 }}>Test Results</div>
+        <button onClick={() => setShow(p => !p)} style={{ ...btn("#C9A24B"), padding:"6px 12px", fontSize:12 }}>+ Add</button>
       </div>
 
       {show && (
@@ -752,7 +768,7 @@ function TestsView({ tests, subjects, onAdd, onDelete }) {
         </form>
       )}
 
-      {tests.length === 0 && <div style={{ ...card, color:"#334155", textAlign:"center", padding:30 }}>No tests logged yet. Add your first one!</div>}
+      {tests.length === 0 && <div style={{ ...card, color:"#4B5563", textAlign:"center", padding:30 }}>No tests logged yet. Add your first one!</div>}
 
       {tests.map(t => {
         const pct = Math.round(t.score/t.max_score*100);
@@ -760,15 +776,15 @@ function TestsView({ tests, subjects, onAdd, onDelete }) {
           <div key={t.id} style={{ ...card, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
               <div style={{ fontWeight:700, fontSize:13 }}>{t.subject_name}</div>
-              <div style={{ fontSize:10, color:"#475569" }}>{t.test_type} · {t.test_date?.slice?.(0,10) || "—"}</div>
+              <div style={{ fontSize:10, color:"#6B7280" }}>{t.test_type} · {t.test_date?.slice?.(0,10) || "—"}</div>
               {t.notes && <div style={{ fontSize:10, color:"#64748b", marginTop:2 }}>{t.notes}</div>}
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
               <div style={{ textAlign:"right" }}>
                 <div style={{ fontSize:20, fontWeight:800, color:tipColor(pct) }}>{pct}%</div>
-                <div style={{ fontSize:10, color:"#475569" }}>{t.score}/{t.max_score}</div>
+                <div style={{ fontSize:10, color:"#6B7280" }}>{t.score}/{t.max_score}</div>
               </div>
-              <button onClick={() => onDelete(t.id)} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#475569", fontSize:16, padding:4 }}>✕</button>
+              <button onClick={() => onDelete(t.id)} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#6B7280", fontSize:16, padding:4 }}>✕</button>
             </div>
           </div>
         );
@@ -816,25 +832,25 @@ function Pomodoro() {
 
   return (
     <div style={{ ...card, textAlign:"center", marginBottom:12 }}>
-      <div style={{ fontSize:11, fontWeight:600, color: mode==="study" ? "#22d3ee" : "#4ade80", marginBottom:8 }}>
+      <div style={{ fontSize:11, fontWeight:600, color: mode==="study" ? "#C9A24B" : "#4ade80", marginBottom:8 }}>
         {mode === "study" ? "🎯 Study Session" : "☕ Break Time"}
       </div>
       {/* circular-ish progress */}
       <div style={{ position:"relative", width:100, height:100, margin:"0 auto 12px" }}>
         <svg width="100" height="100" style={{ transform:"rotate(-90deg)" }}>
-          <circle cx="50" cy="50" r="44" fill="none" stroke="#1e2a4a" strokeWidth="8" />
-          <circle cx="50" cy="50" r="44" fill="none" stroke={mode==="study"?"#22d3ee":"#4ade80"} strokeWidth="8"
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#262B3A" strokeWidth="8" />
+          <circle cx="50" cy="50" r="44" fill="none" stroke={mode==="study"?"#C9A24B":"#4ade80"} strokeWidth="8"
             strokeDasharray={`${2*Math.PI*44}`} strokeDashoffset={`${2*Math.PI*44*(1-pct/100)}`} strokeLinecap="round" />
         </svg>
         <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <div style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:22 }}>{String(mins).padStart(2,"0")}:{String(secs).padStart(2,"0")}</div>
+          <div style={{ fontFamily:"'Fraunces',serif", fontWeight:800, fontSize:22 }}>{String(mins).padStart(2,"0")}:{String(secs).padStart(2,"0")}</div>
         </div>
       </div>
       <div style={{ display:"flex", justifyContent:"center", gap:8, marginBottom:8 }}>
-        <button onClick={() => setRunning(p=>!p)} style={{ ...btn("#22d3ee"), padding:"8px 20px" }}>{running?"Pause":"Start"}</button>
-        <button onClick={reset} style={{ ...btn("#475569"), padding:"8px 14px" }}>Reset</button>
+        <button onClick={() => setRunning(p=>!p)} style={{ ...btn("#C9A24B"), padding:"8px 20px" }}>{running?"Pause":"Start"}</button>
+        <button onClick={reset} style={{ ...btn("#6B7280"), padding:"8px 14px" }}>Reset</button>
       </div>
-      <div style={{ fontSize:10, color:"#475569" }}>Sessions today: {sessions}</div>
+      <div style={{ fontSize:10, color:"#6B7280" }}>Sessions today: {sessions}</div>
     </div>
   );
 }
@@ -867,12 +883,12 @@ function PlannerView({ planner, subjects, onSave }) {
     <div style={{ padding:16, display:"flex", flexDirection:"column", gap:12 }}>
       <Pomodoro />
 
-      <div style={{ fontWeight:700, fontFamily:"'Sora',sans-serif", fontSize:15 }}>Weekly Planner</div>
+      <div style={{ fontWeight:700, fontFamily:"'Fraunces',serif", fontSize:15 }}>Weekly Planner</div>
 
       {/* Day selector */}
       <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
         {DAYS.map(d => (
-          <button key={d} onClick={() => setSelDay(d)} style={{ flex:1, minWidth:36, padding:"8px 0", borderRadius:8, border:`1px solid ${selDay===d?"#22d3ee":"#1e2a4a"}`, background: selDay===d?"#22d3ee22":"#0d1326", cursor:"pointer", fontSize:11, fontWeight:600, color: selDay===d?"#22d3ee":"#475569", fontFamily:"inherit" }}>{d}</button>
+          <button key={d} onClick={() => setSelDay(d)} style={{ flex:1, minWidth:36, padding:"8px 0", borderRadius:8, border:`1px solid ${selDay===d?"#C9A24B":"#262B3A"}`, background: selDay===d?"#C9A24B22":"#12161F", cursor:"pointer", fontSize:11, fontWeight:600, color: selDay===d?"#C9A24B":"#6B7280", fontFamily:"inherit" }}>{d}</button>
         ))}
       </div>
 
@@ -895,27 +911,27 @@ function PlannerView({ planner, subjects, onSave }) {
             <input style={inp} type="number" min="15" max="240" step="15" value={form.mins} onChange={set("mins")} />
           </div>
         </div>
-        <button type="submit" style={{ ...btn("#22d3ee"), width:"100%", padding:"9px 0" }}>+ Add to {selDay}</button>
+        <button type="submit" style={{ ...btn("#C9A24B"), width:"100%", padding:"9px 0" }}>+ Add to {selDay}</button>
       </form>
 
       {/* Entries */}
       <div style={card}>
         <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
           <div style={{ fontWeight:700, fontSize:13 }}>{selDay}'s Plan</div>
-          <div style={{ fontSize:11, color:"#22d3ee" }}>{Math.floor(totalMins/60)}h {totalMins%60}m total</div>
+          <div style={{ fontSize:11, color:"#C9A24B" }}>{Math.floor(totalMins/60)}h {totalMins%60}m total</div>
         </div>
-        {!(local[selDay]?.length) && <div style={{ color:"#334155", fontSize:12, textAlign:"center", padding:"16px 0" }}>No sessions planned — add one above</div>}
+        {!(local[selDay]?.length) && <div style={{ color:"#4B5563", fontSize:12, textAlign:"center", padding:"16px 0" }}>No sessions planned — add one above</div>}
         {(local[selDay]||[]).map((e,i) => {
           const s = subjects.find(s => s.name===e.subject);
           return (
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"#080c18", borderRadius:8, padding:"8px 10px", marginBottom:6 }}>
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"#0D1015", borderRadius:8, padding:"8px 10px", marginBottom:6 }}>
               <div>
-                <div style={{ fontSize:12, color: s?.color||"#22d3ee", fontWeight:600 }}>{s?.icon||"📚"} {e.subject}</div>
+                <div style={{ fontSize:12, color: s?.color||"#C9A24B", fontWeight:600 }}>{s?.icon||"📚"} {e.subject}</div>
                 {e.topic && <div style={{ fontSize:11, color:"#94a3b8" }}>{e.topic}</div>}
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                 <span style={{ fontSize:11, color:"#fbbf24" }}>{e.mins}m</span>
-                <button onClick={() => removeEntry(selDay,i)} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#475569", fontSize:14 }}>✕</button>
+                <button onClick={() => removeEntry(selDay,i)} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#6B7280", fontSize:14 }}>✕</button>
               </div>
             </div>
           );
@@ -955,13 +971,13 @@ function FamilyView({ api }) {
     setParents(p => p.filter(x => x.id !== parentId));
   }
 
-  if (loading) return <div style={{ padding:16, color:"#475569", fontSize:13 }}>Loading…</div>;
+  if (loading) return <div style={{ padding:16, color:"#6B7280", fontSize:13 }}>Loading…</div>;
 
   const expired = code && new Date(code.expires_at) < new Date();
 
   return (
     <div style={{ padding:16, display:"flex", flexDirection:"column", gap:16 }}>
-      <div style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:18 }}>👪 Family Access</div>
+      <div style={{ fontFamily:"'Fraunces',serif", fontWeight:800, fontSize:18 }}>👪 Family Access</div>
 
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:6 }}>Link a Parent</div>
@@ -969,14 +985,14 @@ function FamilyView({ api }) {
           Share this code with a parent so they can view (read-only) your progress, tests, planner, and badges. Codes expire after 24 hours.
         </div>
         {code && !expired ? (
-          <div style={{ background:"#080c18", border:"1px solid #22d3ee55", borderRadius:8, padding:"14px 0", textAlign:"center", marginBottom:10 }}>
-            <div style={{ fontSize:26, fontWeight:800, letterSpacing:"0.25em", color:"#22d3ee", fontFamily:"'Sora',sans-serif" }}>{code.code}</div>
-            <div style={{ fontSize:10, color:"#475569", marginTop:4 }}>Expires {new Date(code.expires_at).toLocaleString()}</div>
+          <div style={{ background:"#0D1015", border:"1px solid #C9A24B55", borderRadius:8, padding:"14px 0", textAlign:"center", marginBottom:10 }}>
+            <div style={{ fontSize:26, fontWeight:800, letterSpacing:"0.25em", color:"#C9A24B", fontFamily:"'Fraunces',serif" }}>{code.code}</div>
+            <div style={{ fontSize:10, color:"#6B7280", marginTop:4 }}>Expires {new Date(code.expires_at).toLocaleString()}</div>
           </div>
         ) : (
-          <div style={{ fontSize:11.5, color:"#475569", marginBottom:10 }}>{expired ? "Your last code expired." : "No active code yet."}</div>
+          <div style={{ fontSize:11.5, color:"#6B7280", marginBottom:10 }}>{expired ? "Your last code expired." : "No active code yet."}</div>
         )}
-        <button onClick={generate} disabled={genLoading} style={{ ...btn("#22d3ee"), width:"100%", padding:"10px 0", opacity: genLoading?0.6:1 }}>
+        <button onClick={generate} disabled={genLoading} style={{ ...btn("#C9A24B"), width:"100%", padding:"10px 0", opacity: genLoading?0.6:1 }}>
           {genLoading ? "Generating…" : code && !expired ? "Generate New Code" : "Generate Code"}
         </button>
       </div>
@@ -984,12 +1000,12 @@ function FamilyView({ api }) {
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Parents With Access</div>
         {parents.length === 0 ? (
-          <div style={{ fontSize:11.5, color:"#475569" }}>No parent is linked to your account yet.</div>
+          <div style={{ fontSize:11.5, color:"#6B7280" }}>No parent is linked to your account yet.</div>
         ) : parents.map(p => (
-          <div key={p.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #1e2a4a" }}>
+          <div key={p.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #262B3A" }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600 }}>{p.name}</div>
-              <div style={{ fontSize:10.5, color:"#475569" }}>{p.email} · since {new Date(p.linked_at).toLocaleDateString()}</div>
+              <div style={{ fontSize:10.5, color:"#6B7280" }}>{p.email} · since {new Date(p.linked_at).toLocaleDateString()}</div>
             </div>
             <button onClick={() => revoke(p.id)} style={{ ...btn("#f87171"), fontSize:11, padding:"6px 10px" }}>Revoke</button>
           </div>
@@ -1004,8 +1020,8 @@ function BadgesView({ badges }) {
   const locked = badges.filter(b => !b.earned);
   return (
     <div style={{ padding:16 }}>
-      <div style={{ fontWeight:700, fontFamily:"'Sora',sans-serif", fontSize:15, marginBottom:4 }}>Achievements</div>
-      <div style={{ fontSize:11, color:"#475569", marginBottom:16 }}>{earned.length}/{badges.length} badges earned</div>
+      <div style={{ fontWeight:700, fontFamily:"'Fraunces',serif", fontSize:15, marginBottom:4 }}>Achievements</div>
+      <div style={{ fontSize:11, color:"#6B7280", marginBottom:16 }}>{earned.length}/{badges.length} badges earned</div>
       {earned.length > 0 && <>
         <div style={{ fontSize:11, fontWeight:600, color:"#fbbf24", marginBottom:8 }}>Earned</div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:16 }}>
@@ -1013,19 +1029,19 @@ function BadgesView({ badges }) {
             <div key={b.id} style={{ ...card, textAlign:"center", padding:12, border:"1px solid #fbbf2433" }}>
               <div style={{ fontSize:28 }}>{b.emoji}</div>
               <div style={{ fontSize:11, fontWeight:700, color:"#fbbf24", marginTop:4 }}>{b.label}</div>
-              <div style={{ fontSize:9, color:"#475569", marginTop:2 }}>{b.desc}</div>
+              <div style={{ fontSize:9, color:"#6B7280", marginTop:2 }}>{b.desc}</div>
             </div>
           ))}
         </div>
       </>}
       {locked.length > 0 && <>
-        <div style={{ fontSize:11, fontWeight:600, color:"#475569", marginBottom:8 }}>Locked</div>
+        <div style={{ fontSize:11, fontWeight:600, color:"#6B7280", marginBottom:8 }}>Locked</div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
           {locked.map(b => (
             <div key={b.id} style={{ ...card, textAlign:"center", padding:12, opacity:0.4 }}>
               <div style={{ fontSize:28, filter:"grayscale(1)" }}>{b.emoji}</div>
               <div style={{ fontSize:11, fontWeight:700, color:"#94a3b8", marginTop:4 }}>{b.label}</div>
-              <div style={{ fontSize:9, color:"#475569", marginTop:2 }}>{b.desc}</div>
+              <div style={{ fontSize:9, color:"#6B7280", marginTop:2 }}>{b.desc}</div>
             </div>
           ))}
         </div>
@@ -1043,7 +1059,7 @@ function AnalyticsView({ subjects, progress, tests }) {
     prog:  s.chapters.filter(c => progress[c.id]?.status===1).length,
   }));
   const trendData = tests.slice(-20).map((t,i) => ({ n:i+1, score: Math.round(t.score/t.max_score*100) }));
-  const tipColor = v => !v ? "#475569" : v>=80 ? "#4ade80" : v>=60 ? "#fbbf24" : "#f87171";
+  const tipColor = v => !v ? "#6B7280" : v>=80 ? "#4ade80" : v>=60 ? "#fbbf24" : "#f87171";
   const avgScore = tests.length ? Math.round(tests.reduce((a,t) => a+t.score/t.max_score*100,0)/tests.length) : null;
   const totalMins = 0;
   const totalCh = subjects.reduce((a,s) => a+s.chapters.length,0);
@@ -1064,11 +1080,11 @@ function AnalyticsView({ subjects, progress, tests }) {
           { v:`${done}/${totalCh}`, l:"Chapters Done", c:"#4ade80" },
           { v:tests.length, l:"Tests Logged", c:"#fbbf24" },
           { v: avgScore?`${avgScore}%`:"—", l:"Avg Score", c:tipColor(avgScore) },
-          { v:`${Math.round(done/Math.max(totalCh,1)*100)}%`, l:"Completion", c:"#22d3ee" },
+          { v:`${Math.round(done/Math.max(totalCh,1)*100)}%`, l:"Completion", c:"#C9A24B" },
         ].map(({ v,l,c }) => (
           <div key={l} style={{ ...card, textAlign:"center", padding:14 }}>
-            <div style={{ fontSize:22, fontWeight:800, color:c, fontFamily:"'Sora',sans-serif" }}>{v}</div>
-            <div style={{ fontSize:10, color:"#475569", marginTop:2 }}>{l}</div>
+            <div style={{ fontSize:22, fontWeight:800, color:c, fontFamily:"'Fraunces',serif" }}>{v}</div>
+            <div style={{ fontSize:10, color:"#6B7280", marginTop:2 }}>{l}</div>
           </div>
         ))}
       </div>
@@ -1077,11 +1093,11 @@ function AnalyticsView({ subjects, progress, tests }) {
         <div style={{ fontWeight:700, fontSize:13, marginBottom:12 }}>Chapter Completion</div>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={chData} barSize={14} margin={{ left:-20 }}>
-            <XAxis dataKey="sub" tick={{ fontSize:9, fill:"#475569" }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="sub" tick={{ fontSize:9, fill:"#6B7280" }} axisLine={false} tickLine={false} />
             <YAxis hide />
-            <Tooltip contentStyle={{ background:"#0d1326", border:"1px solid #1e2a4a", borderRadius:8, fontSize:11 }} cursor={{ fill:"#1e2a4a33" }} />
+            <Tooltip contentStyle={{ background:"#12161F", border:"1px solid #262B3A", borderRadius:8, fontSize:11 }} cursor={{ fill:"#262B3A33" }} />
             <Bar dataKey="done" stackId="a" fill="#4ade80" name="Completed" />
-            <Bar dataKey="rev"  stackId="a" fill="#22d3ee" name="Revised" radius={[4,4,0,0]} />
+            <Bar dataKey="rev"  stackId="a" fill="#C9A24B" name="Revised" radius={[4,4,0,0]} />
             <Bar dataKey="prog" stackId="b" fill="#fbbf24" name="In Progress" radius={[4,4,0,0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -1092,10 +1108,10 @@ function AnalyticsView({ subjects, progress, tests }) {
           <div style={{ fontWeight:700, fontSize:13, marginBottom:12 }}>Score Trend</div>
           <ResponsiveContainer width="100%" height={140}>
             <LineChart data={trendData} margin={{ left:-20 }}>
-              <XAxis dataKey="n" tick={{ fontSize:9, fill:"#475569" }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0,100]} tick={{ fontSize:9, fill:"#475569" }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background:"#0d1326", border:"1px solid #1e2a4a", borderRadius:8, fontSize:11 }} formatter={v => [`${v}%`,"Score"]} />
-              <Line type="monotone" dataKey="score" stroke="#22d3ee" strokeWidth={2.5} dot={{ fill:"#22d3ee", r:3, strokeWidth:0 }} />
+              <XAxis dataKey="n" tick={{ fontSize:9, fill:"#6B7280" }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0,100]} tick={{ fontSize:9, fill:"#6B7280" }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background:"#12161F", border:"1px solid #262B3A", borderRadius:8, fontSize:11 }} formatter={v => [`${v}%`,"Score"]} />
+              <Line type="monotone" dataKey="score" stroke="#C9A24B" strokeWidth={2.5} dot={{ fill:"#C9A24B", r:3, strokeWidth:0 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -1110,7 +1126,7 @@ function AnalyticsView({ subjects, progress, tests }) {
                 <span style={{ fontSize:12 }}>{sub}</span>
                 <span style={{ fontSize:12, fontWeight:700, color:tipColor(avg) }}>{avg}%</span>
               </div>
-              <div style={{ height:5, background:"#1e2a4a", borderRadius:3 }}>
+              <div style={{ height:5, background:"#262B3A", borderRadius:3 }}>
                 <div style={{ width:`${avg}%`, height:"100%", background:tipColor(avg), borderRadius:3 }} />
               </div>
             </div>
@@ -1158,7 +1174,7 @@ function LinkChildForm({ api, onLinked }) {
       </div>
       <form onSubmit={submit} style={{ display:"flex", gap:8 }}>
         <input style={{ ...inp, textTransform:"uppercase", letterSpacing:"0.15em", textAlign:"center", fontWeight:700 }} value={code} onChange={e => setCode(e.target.value)} placeholder="ABCD12" maxLength={8} required />
-        <button type="submit" disabled={loading} style={{ ...btn("#22d3ee"), whiteSpace:"nowrap", opacity: loading?0.6:1 }}>{loading ? "…" : "Link"}</button>
+        <button type="submit" disabled={loading} style={{ ...btn("#C9A24B"), whiteSpace:"nowrap", opacity: loading?0.6:1 }}>{loading ? "…" : "Link"}</button>
       </form>
       {err && <div style={{ background:"#3b0a0a", border:"1px solid #7f1d1d", borderRadius:8, padding:"8px 10px", fontSize:11.5, color:"#fca5a5", marginTop:10 }}>{err}</div>}
     </div>
@@ -1196,8 +1212,8 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
 
   if (loading) return (
     <div style={{ padding:16 }}>
-      <button onClick={onBack} style={{ ...btn("#475569"), marginBottom:12 }}>← Back</button>
-      <div style={{ color:"#475569", fontSize:13 }}>Loading {child.name}'s data…</div>
+      <button onClick={onBack} style={{ ...btn("#6B7280"), marginBottom:12 }}>← Back</button>
+      <div style={{ color:"#6B7280", fontSize:13 }}>Loading {child.name}'s data…</div>
     </div>
   );
 
@@ -1206,16 +1222,16 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
   return (
     <div style={{ padding:16, display:"flex", flexDirection:"column", gap:16 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <button onClick={onBack} style={btn("#475569")}>← Back</button>
+        <button onClick={onBack} style={btn("#6B7280")}>← Back</button>
         <button onClick={() => onUnlink(child.id)} style={{ ...btn("#f87171"), fontSize:11 }}>Unlink</button>
       </div>
 
       <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-        <div style={{ width:48, height:48, borderRadius:12, background: child.avatar_color||"#22d3ee", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, fontWeight:800, color:"#06080f" }}>
+        <div style={{ width:48, height:48, borderRadius:12, background: child.avatar_color||"#C9A24B", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, fontWeight:800, color:"#0A0D12" }}>
           {child.name?.[0]?.toUpperCase()}
         </div>
         <div>
-          <div style={{ fontSize:18, fontWeight:800, fontFamily:"'Sora',sans-serif" }}>{child.name}</div>
+          <div style={{ fontSize:18, fontWeight:800, fontFamily:"'Fraunces',serif" }}>{child.name}</div>
           <div style={{ fontSize:11.5, color:"#64748b" }}>{BOARDS.find(b=>b.id===child.board)?.label||child.board} · Class {child.class_num}{child.stream ? ` (${child.stream})` : ""}</div>
         </div>
       </div>
@@ -1230,7 +1246,7 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
         ].map(s => (
           <div key={s.label} style={{ ...card, padding:10, textAlign:"center" }}>
             <div style={{ fontSize:16, fontWeight:800 }}>{s.val}</div>
-            <div style={{ fontSize:9, color:"#475569", textTransform:"uppercase", letterSpacing:"0.06em" }}>{s.label}</div>
+            <div style={{ fontSize:9, color:"#6B7280", textTransform:"uppercase", letterSpacing:"0.06em" }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -1238,15 +1254,15 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
       {/* Subject progress */}
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Subject Progress</div>
-        {syllabus.length === 0 && <div style={{ fontSize:11.5, color:"#475569" }}>No syllabus data.</div>}
+        {syllabus.length === 0 && <div style={{ fontSize:11.5, color:"#6B7280" }}>No syllabus data.</div>}
         {syllabus.map(s => (
           <div key={s.id} style={{ marginBottom:10 }}>
             <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
               <span>{s.icon} {s.name}</span>
-              <span style={{ color:"#475569" }}>{s.doneChapters}/{s.totalChapters}</span>
+              <span style={{ color:"#6B7280" }}>{s.doneChapters}/{s.totalChapters}</span>
             </div>
-            <div style={{ background:"#080c18", borderRadius:6, height:6, overflow:"hidden" }}>
-              <div style={{ width:`${s.pct}%`, height:"100%", background: s.color||"#22d3ee", borderRadius:6 }} />
+            <div style={{ background:"#0D1015", borderRadius:6, height:6, overflow:"hidden" }}>
+              <div style={{ width:`${s.pct}%`, height:"100%", background: s.color||"#C9A24B", borderRadius:6 }} />
             </div>
           </div>
         ))}
@@ -1255,12 +1271,12 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
       {/* Recent tests */}
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Recent Tests</div>
-        {tests.length === 0 && <div style={{ fontSize:11.5, color:"#475569" }}>No tests logged yet.</div>}
+        {tests.length === 0 && <div style={{ fontSize:11.5, color:"#6B7280" }}>No tests logged yet.</div>}
         {tests.slice(0,8).map(t => (
-          <div key={t.id} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:"1px solid #1e2a4a", fontSize:12 }}>
+          <div key={t.id} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:"1px solid #262B3A", fontSize:12 }}>
             <div>
               <div style={{ fontWeight:600 }}>{t.subject_name}</div>
-              <div style={{ fontSize:10, color:"#475569" }}>{t.test_type} · {new Date(t.test_date).toLocaleDateString()}</div>
+              <div style={{ fontSize:10, color:"#6B7280" }}>{t.test_type} · {new Date(t.test_date).toLocaleDateString()}</div>
             </div>
             <div style={{ fontWeight:700, color: (t.score/t.max_score*100)>=60 ? "#4ade80" : "#f87171" }}>
               {t.score}/{t.max_score}
@@ -1273,10 +1289,10 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Weekly Plan</div>
         {DAYS.every(d => !(planner[d]||[]).length) ? (
-          <div style={{ fontSize:11.5, color:"#475569" }}>No planner entries yet.</div>
+          <div style={{ fontSize:11.5, color:"#6B7280" }}>No planner entries yet.</div>
         ) : DAYS.map(d => (planner[d]||[]).length > 0 && (
           <div key={d} style={{ marginBottom:8 }}>
-            <div style={{ fontSize:10, color:"#22d3ee", fontWeight:700, marginBottom:3 }}>{d}</div>
+            <div style={{ fontSize:10, color:"#C9A24B", fontWeight:700, marginBottom:3 }}>{d}</div>
             {planner[d].map((e,i) => (
               <div key={i} style={{ fontSize:11.5, color:"#94a3b8", padding:"2px 0" }}>{e.subject} — {e.topic} ({e.mins}m)</div>
             ))}
@@ -1288,7 +1304,7 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Badges Earned ({earnedBadges.length}/{badges.length})</div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {earnedBadges.length === 0 && <div style={{ fontSize:11.5, color:"#475569" }}>No badges yet.</div>}
+          {earnedBadges.length === 0 && <div style={{ fontSize:11.5, color:"#6B7280" }}>No badges yet.</div>}
           {earnedBadges.map(b => (
             <div key={b.id} title={b.desc} style={{ fontSize:20 }}>{b.emoji}</div>
           ))}
@@ -1299,12 +1315,12 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Recent Doubts Asked</div>
         {doubts.length === 0 ? (
-          <div style={{ fontSize:11.5, color:"#475569" }}>No doubts asked yet.</div>
+          <div style={{ fontSize:11.5, color:"#6B7280" }}>No doubts asked yet.</div>
         ) : doubts.slice(0,10).map(d => (
-          <div key={d.id} style={{ padding:"8px 0", borderBottom:"1px solid #1e2a4a" }}>
-            <div style={{ fontSize:12, color:"#e2e8f0", fontWeight:600, marginBottom:3 }}>{d.question}</div>
+          <div key={d.id} style={{ padding:"8px 0", borderBottom:"1px solid #262B3A" }}>
+            <div style={{ fontSize:12, color:"#ECE7DC", fontWeight:600, marginBottom:3 }}>{d.question}</div>
             <div style={{ fontSize:11, color:"#64748b", lineHeight:1.5 }}>{d.answer.length>180 ? d.answer.slice(0,180)+"…" : d.answer}</div>
-            <div style={{ fontSize:9.5, color:"#334155", marginTop:3 }}>{new Date(d.created_at).toLocaleString()}</div>
+            <div style={{ fontSize:9.5, color:"#4B5563", marginTop:3 }}>{new Date(d.created_at).toLocaleString()}</div>
           </div>
         ))}
       </div>
@@ -1313,7 +1329,7 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Recent Activity</div>
         {activity.length === 0 ? (
-          <div style={{ fontSize:11.5, color:"#475569" }}>No activity recorded yet.</div>
+          <div style={{ fontSize:11.5, color:"#6B7280" }}>No activity recorded yet.</div>
         ) : activity.map((a,i) => {
           const m = a.event_meta||{};
           const label = a.event_type==="chapter_opened" ? "Opened a chapter to study"
@@ -1323,9 +1339,9 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
             : a.event_type==="doubt_asked" ? `Asked a doubt — "${m.question}"`
             : a.event_type;
           return (
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom: i<activity.length-1?"1px solid #1e2a4a":"none", fontSize:11.5 }}>
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom: i<activity.length-1?"1px solid #262B3A":"none", fontSize:11.5 }}>
               <span style={{ color:"#94a3b8" }}>{label}</span>
-              <span style={{ color:"#334155", fontSize:10, whiteSpace:"nowrap", marginLeft:8 }}>{new Date(a.created_at).toLocaleString()}</span>
+              <span style={{ color:"#4B5563", fontSize:10, whiteSpace:"nowrap", marginLeft:8 }}>{new Date(a.created_at).toLocaleString()}</span>
             </div>
           );
         })}
@@ -1359,16 +1375,16 @@ function ParentApp({ user, api, onLogout }) {
   }
 
   return (
-    <div style={{ background:"#06080f", minHeight:"100vh", color:"#e2e8f0", fontFamily:"'DM Sans',system-ui,sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#06080f;} input::placeholder{color:#334155;}`}</style>
+    <div style={{ background:"#0A0D12", minHeight:"100vh", color:"#ECE7DC", fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#0A0D12;} input::placeholder{color:#4B5563;}`}</style>
 
-      <div style={{ background:"#090d1e", borderBottom:"1px solid #1e2a4a", padding:"12px 16px", position:"sticky", top:0, zIndex:60, display:"flex", alignItems:"center", gap:10 }}>
-        <div style={{ width:32, height:32, borderRadius:8, background:"linear-gradient(135deg,#22d3ee,#a78bfa)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>👪</div>
+      <div style={{ background:"#090d1e", borderBottom:"1px solid #262B3A", padding:"12px 16px", position:"sticky", top:0, zIndex:60, display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ width:32, height:32, borderRadius:8, background:"linear-gradient(135deg,#C9A24B,#E0B85C)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>👪</div>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:13, fontWeight:800, fontFamily:"'Sora',sans-serif" }}>Parent Dashboard</div>
-          <div style={{ fontSize:10.5, color:"#475569" }}>{user.name}</div>
+          <div style={{ fontSize:13, fontWeight:800, fontFamily:"'Fraunces',serif" }}>Parent Dashboard</div>
+          <div style={{ fontSize:10.5, color:"#6B7280" }}>{user.name}</div>
         </div>
-        <button onClick={onLogout} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#475569", fontSize:16, padding:4 }} title="Sign out">⎋</button>
+        <button onClick={onLogout} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#6B7280", fontSize:16, padding:4 }} title="Sign out">⎋</button>
       </div>
 
       {selected ? (
@@ -1380,21 +1396,21 @@ function ParentApp({ user, api, onLogout }) {
           <div>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Your Children</div>
             {loading ? (
-              <div style={{ fontSize:11.5, color:"#475569" }}>Loading…</div>
+              <div style={{ fontSize:11.5, color:"#6B7280" }}>Loading…</div>
             ) : children.length === 0 ? (
-              <div style={{ ...card, fontSize:11.5, color:"#475569" }}>No children linked yet. Use a code above to get started.</div>
+              <div style={{ ...card, fontSize:11.5, color:"#6B7280" }}>No children linked yet. Use a code above to get started.</div>
             ) : (
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 {children.map(c => (
                   <button key={c.id} onClick={() => setSelected(c)} style={{ ...card, display:"flex", alignItems:"center", gap:12, textAlign:"left", cursor:"pointer", width:"100%", fontFamily:"inherit" }}>
-                    <div style={{ width:40, height:40, borderRadius:10, background: c.avatar_color||"#22d3ee", display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:800, color:"#06080f", flexShrink:0 }}>
+                    <div style={{ width:40, height:40, borderRadius:10, background: c.avatar_color||"#C9A24B", display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:800, color:"#0A0D12", flexShrink:0 }}>
                       {c.name?.[0]?.toUpperCase()}
                     </div>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontSize:14, fontWeight:700, color:"#e2e8f0" }}>{c.name}</div>
+                      <div style={{ fontSize:14, fontWeight:700, color:"#ECE7DC" }}>{c.name}</div>
                       <div style={{ fontSize:11, color:"#64748b" }}>Class {c.class_num} · Lv.{c.level} · 🔥{c.streak}</div>
                     </div>
-                    <div style={{ color:"#334155", fontSize:16 }}>→</div>
+                    <div style={{ color:"#4B5563", fontSize:16 }}>→</div>
                   </button>
                 ))}
               </div>
@@ -1508,10 +1524,10 @@ export default function App() {
   if (!token || (!user && !loading)) return <AuthScreen onAuth={handleAuth} />;
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:"#06080f", display:"flex", alignItems:"center", justifyContent:"center" }}>
+    <div style={{ minHeight:"100vh", background:"#0A0D12", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ textAlign:"center" }}>
         <div style={{ fontSize:32, marginBottom:8 }}>🎓</div>
-        <div style={{ color:"#22d3ee", fontSize:14 }}>Loading your study data…</div>
+        <div style={{ color:"#C9A24B", fontSize:14 }}>Loading your study data…</div>
       </div>
     </div>
   );
@@ -1530,24 +1546,21 @@ export default function App() {
 
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#06080f;} ::-webkit-scrollbar{width:3px;height:3px;} ::-webkit-scrollbar-track{background:#0d1326;} ::-webkit-scrollbar-thumb{background:#1e2a4a;border-radius:3px;} input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4);} select option{background:#0d1326;color:#e2e8f0;} input::placeholder{color:#334155;}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap'); *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} body{margin:0;background:#0A0D12;} ::-webkit-scrollbar{width:3px;height:3px;} ::-webkit-scrollbar-track{background:#12161F;} ::-webkit-scrollbar-thumb{background:#262B3A;border-radius:3px;} input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4);} select option{background:#12161F;color:#ECE7DC;} input::placeholder{color:#4B5563;}`}</style>
 
-      <div style={{ background:"#06080f", minHeight:"100vh", color:"#e2e8f0", fontFamily:"'DM Sans',system-ui,sans-serif", paddingBottom:68 }}>
+      <div style={{ background:"#0A0D12", minHeight:"100vh", color:"#ECE7DC", fontFamily:"'DM Sans',system-ui,sans-serif", paddingBottom:68 }}>
 
         {/* Header */}
-        <div style={{ background:"#090d1e", borderBottom:"1px solid #1e2a4a", padding:"10px 16px", position:"sticky", top:0, zIndex:60 }}>
+        <div style={{ background:"#0D1015", borderBottom:"1px solid #262B3A", padding:"10px 16px", position:"sticky", top:0, zIndex:60 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ width:32, height:32, borderRadius:8, background:"linear-gradient(135deg,#22d3ee,#a78bfa)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>🎓</div>
+            <LevelMedallion level={user.level||1} xp={user.xp||0} size={38} />
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:13, fontWeight:800, fontFamily:"'Sora',sans-serif", lineHeight:1 }}>StudyTracker</div>
-              <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:2 }}>
-                <LevelBar xp={user.xp||0} level={user.level||1} />
-                <span style={{ fontSize:9, color:"#a78bfa", whiteSpace:"nowrap", fontWeight:700 }}>Lv.{user.level} {LEVEL_NAMES[user.level]||""}</span>
-              </div>
+              <div style={{ fontSize:14, fontWeight:600, fontFamily:"'Fraunces',serif", lineHeight:1.1, color:"#ECE7DC" }}>StudyTracker</div>
+              <div style={{ fontSize:9.5, color:"#E0B85C", fontWeight:600, marginTop:2, letterSpacing:"0.03em" }}>{LEVEL_NAMES[user.level]||"Spark"} · {user.xp||0} XP</div>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
-              <div style={{ background:"#1e2a4a", borderRadius:8, padding:"3px 8px", fontSize:12, color:"#fbbf24", fontWeight:700 }}>🔥{user.streak||0}</div>
-              <button onClick={handleLogout} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#475569", fontSize:16, padding:4 }} title="Sign out">⎋</button>
+              <div style={{ background:"#262B3A", borderRadius:8, padding:"3px 8px", fontSize:12, color:"#fbbf24", fontWeight:700 }}>🔥{user.streak||0}</div>
+              <button onClick={handleLogout} style={{ background:"transparent", border:"none", cursor:"pointer", color:"#6B7280", fontSize:16, padding:4 }} title="Sign out">⎋</button>
             </div>
           </div>
         </div>
@@ -1562,14 +1575,14 @@ export default function App() {
         )}
 
         {/* Bottom Nav */}
-        <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"#06080f", borderTop:"1px solid #1e2a4a", display:"flex", zIndex:60 }}>
+        <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"#0A0D12", borderTop:"1px solid #262B3A", display:"flex", zIndex:60 }}>
           {TABS.map(({ id, icon, label }) => {
             const active = tab === id;
             return (
               <button key={id} onClick={() => setTab(id)} style={{ flex:1, background:"transparent", border:"none", padding:"8px 0 6px", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
                 <span style={{ fontSize:17, lineHeight:1 }}>{icon}</span>
-                <span style={{ fontSize:8, color: active?"#22d3ee":"#334155", fontFamily:"inherit", fontWeight: active?700:400, letterSpacing:"0.02em" }}>{label}</span>
-                {active && <div style={{ width:16, height:2, background:"#22d3ee", borderRadius:1 }} />}
+                <span style={{ fontSize:8, color: active?"#C9A24B":"#4B5563", fontFamily:"inherit", fontWeight: active?700:400, letterSpacing:"0.02em" }}>{label}</span>
+                {active && <div style={{ width:16, height:2, background:"#C9A24B", borderRadius:1 }} />}
               </button>
             );
           })}
