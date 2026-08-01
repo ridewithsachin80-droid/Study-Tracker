@@ -18,6 +18,13 @@ const STATUS_CFG = [
 ];
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const TEST_TYPES = ["Class Test","Weekly Test","Unit Test","Phase Test","Half-Yearly","Mock Test","Board Exam"];
+const DIFFICULTY_TIERS = [
+  { id:"", label:"Not specified" },
+  { id:"standard", label:"Standard (school-level)" },
+  { id:"moderate", label:"Moderate" },
+  { id:"hard", label:"Hard" },
+  { id:"very_hard", label:"Very Hard (JEE-adjacent)" },
+];
 const BOARDS = [
   { id:"cbse",      label:"CBSE",              flag:"🇮🇳" },
   { id:"icse",      label:"ICSE",              flag:"🏫" },
@@ -225,7 +232,71 @@ function AuthScreen({ onAuth }) {
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
+function NeetTrajectoryCard({ api, latestPath, analyzePath }) {
+  const [proj, setProj]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy]   = useState(false);
+  const [err, setErr]     = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try { setProj(await api.get(latestPath)); } catch(e) { console.error(e.message); }
+      setLoading(false);
+    })();
+  }, [latestPath]);
+
+  async function analyze() {
+    setBusy(true); setErr("");
+    try { setProj(await api.post(analyzePath)); }
+    catch(e) { setErr(e.message); }
+    setBusy(false);
+  }
+
+  const confColor = { low:"#f87171", moderate:"#fbbf24", high:"#4ade80" };
+
+  return (
+    <div style={card}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <div style={{ fontWeight:700, fontSize:13 }}>🎯 NEET Trajectory</div>
+        {analyzePath && (
+          <button onClick={analyze} disabled={busy} style={{ ...btn("#C9A24B"), fontSize:11, padding:"5px 10px", opacity:busy?0.6:1 }}>
+            {busy ? "Analyzing…" : proj ? "Re-analyze" : "Analyze"}
+          </button>
+        )}
+      </div>
+      {loading ? (
+        <div style={{ fontSize:11.5, color:"#6B7280" }}>Loading…</div>
+      ) : err ? (
+        <div style={{ fontSize:11.5, color:"#f87171" }}>{err}</div>
+      ) : !proj ? (
+        <div style={{ fontSize:11.5, color:"#6B7280" }}>
+          {analyzePath ? "Log a few tests, then tap Analyze to see a projected NEET trajectory for Class 12." : "No trajectory analysis yet — ask your child to run one from the Tests tab."}
+        </div>
+      ) : (
+        <div>
+          <div style={{ display:"flex", alignItems:"baseline", gap:10, marginBottom:8, flexWrap:"wrap" }}>
+            {proj.projected_min && proj.projected_max && (
+              <div style={{ fontFamily:"'Fraunces',serif", fontSize:22, fontWeight:600, color:"#C9A24B" }}>
+                {proj.projected_min}–{proj.projected_max}<span style={{fontSize:12,color:"#6B7280"}}> / 720</span>
+              </div>
+            )}
+            {proj.confidence && (
+              <span style={{ fontSize:9.5, textTransform:"uppercase", letterSpacing:"0.05em", color: confColor[proj.confidence]||"#6B7280", border:`1px solid ${(confColor[proj.confidence]||"#262B3A")}55`, borderRadius:6, padding:"2px 6px" }}>
+                {proj.confidence} confidence
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize:12, color:"#94a3b8", lineHeight:1.6, whiteSpace:"pre-wrap" }}>{proj.projection_text}</div>
+          <div style={{ fontSize:9.5, color:"#4B5563", marginTop:8 }}>Based on {proj.based_on_test_count} logged test{proj.based_on_test_count===1?"":"s"} · {new Date(proj.created_at).toLocaleDateString()}</div>
+        </div>
+      )}
+      <div style={{ fontSize:9.5, color:"#4B5563", marginTop:10, fontStyle:"italic" }}>A directional estimate to guide effort, not a guarantee — projections made years before Class 12 carry real uncertainty.</div>
+    </div>
+  );
+}
+
+function Dashboard({ user, subjects, progress, tests, onStatusChange, api }) {
   const totalCh = subjects.reduce((a,s) => a + s.chapters.length, 0);
   const done = Object.values(progress).filter(p => p.status === 2).length;
   const revised = Object.values(progress).filter(p => p.status === 3).length;
@@ -349,6 +420,9 @@ function Dashboard({ user, subjects, progress, tests, onStatusChange }) {
           );
         })}
       </div>
+
+      {/* NEET Trajectory */}
+      <NeetTrajectoryCard api={api} latestPath="/api/analysis/neet-projection/latest" analyzePath="/api/analysis/neet-projection" />
     </div>
   );
 }
@@ -721,15 +795,20 @@ function SubjectsView({ subjects, progress, onStatusChange, api }) {
 
 // ─── TESTS VIEW ───────────────────────────────────────────────────────────────
 function TestsView({ tests, subjects, onAdd, onDelete }) {
-  const [form, setForm]   = useState({ subject:"", type:"Class Test", score:"", max:"100", date:"", notes:"" });
+  const [form, setForm]   = useState({ subject:"", type:"Class Test", score:"", max:"100", date:"", notes:"", difficultyTier:"", classRank:"", classSize:"" });
   const [show, setShow]   = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   function submit(e) {
     e.preventDefault();
-    onAdd({ subjectName: form.subject, testType: form.type, score: parseFloat(form.score), maxScore: parseFloat(form.max)||100, testDate: form.date||undefined, notes: form.notes });
-    setForm({ subject:"", type:"Class Test", score:"", max:"100", date:"", notes:"" });
-    setShow(false);
+    onAdd({
+      subjectName: form.subject, testType: form.type, score: parseFloat(form.score), maxScore: parseFloat(form.max)||100,
+      testDate: form.date||undefined, notes: form.notes, difficultyTier: form.difficultyTier||undefined,
+      classRank: form.classRank?parseInt(form.classRank):undefined, classSize: form.classSize?parseInt(form.classSize):undefined,
+    });
+    setForm({ subject:"", type:"Class Test", score:"", max:"100", date:"", notes:"", difficultyTier:"", classRank:"", classSize:"" });
+    setShow(false); setShowAdvanced(false);
   }
   const tipColor = v => v >= 80 ? "#4ade80" : v >= 60 ? "#fbbf24" : "#f87171";
 
@@ -764,6 +843,24 @@ function TestsView({ tests, subjects, onAdd, onDelete }) {
           </div>
           <label style={lbl}>Notes</label>
           <input style={{ ...inp, marginBottom:10 }} placeholder="Optional notes…" value={form.notes} onChange={set("notes")} />
+
+          <button type="button" onClick={() => setShowAdvanced(p => !p)} style={{ background:"transparent", border:"none", color:"#E0B85C", fontSize:11, cursor:"pointer", padding:0, marginBottom:showAdvanced?10:12, fontFamily:"inherit" }}>
+            {showAdvanced ? "− Hide" : "+ Add"} paper difficulty / class rank <span style={{color:"#4B5563"}}>(sharpens the NEET trajectory estimate)</span>
+          </button>
+
+          {showAdvanced && (
+            <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1fr 1fr", gap:8, marginBottom:12 }}>
+              <div>
+                <label style={lbl}>Paper Difficulty</label>
+                <select style={inp} value={form.difficultyTier} onChange={set("difficultyTier")}>
+                  {DIFFICULTY_TIERS.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
+                </select>
+              </div>
+              <div><label style={lbl}>Class Rank</label><input style={inp} type="number" min="1" placeholder="e.g. 2" value={form.classRank} onChange={set("classRank")} /></div>
+              <div><label style={lbl}>Class Size</label><input style={inp} type="number" min="1" placeholder="e.g. 56" value={form.classSize} onChange={set("classSize")} /></div>
+            </div>
+          )}
+
           <button type="submit" style={{ ...btn("#4ade80"), width:"100%", padding:"10px 0" }}>Save Test</button>
         </form>
       )}
@@ -777,6 +874,12 @@ function TestsView({ tests, subjects, onAdd, onDelete }) {
             <div>
               <div style={{ fontWeight:700, fontSize:13 }}>{t.subject_name}</div>
               <div style={{ fontSize:10, color:"#6B7280" }}>{t.test_type} · {t.test_date?.slice?.(0,10) || "—"}</div>
+              {(t.difficulty_tier || t.class_rank) && (
+                <div style={{ display:"flex", gap:6, marginTop:3 }}>
+                  {t.difficulty_tier && <span style={{ fontSize:9, color:"#E0B85C", background:"#E0B85C1a", borderRadius:5, padding:"1px 6px" }}>{DIFFICULTY_TIERS.find(d=>d.id===t.difficulty_tier)?.label||t.difficulty_tier}</span>}
+                  {t.class_rank && t.class_size && <span style={{ fontSize:9, color:"#6B7280" }}>Rank {t.class_rank}/{t.class_size}</span>}
+                </div>
+              )}
               {t.notes && <div style={{ fontSize:10, color:"#64748b", marginTop:2 }}>{t.notes}</div>}
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -1251,6 +1354,9 @@ function ChildDetail({ api, child, onBack, onUnlink }) {
         ))}
       </div>
 
+      {/* NEET Trajectory (read-only) */}
+      <NeetTrajectoryCard api={api} latestPath={`/api/parent/child/${child.id}/neet-projection`} analyzePath={null} />
+
       {/* Subject progress */}
       <div style={card}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Subject Progress</div>
@@ -1537,7 +1643,7 @@ export default function App() {
   if (user.role === "parent") return <ParentApp user={user} api={api} onLogout={handleLogout} />;
 
   const pages = {
-    dashboard: <Dashboard user={user} subjects={subjects} progress={progress} tests={tests} onStatusChange={handleStatusChange} />,
+    dashboard: <Dashboard user={user} subjects={subjects} progress={progress} tests={tests} onStatusChange={handleStatusChange} api={api} />,
     subjects:  <SubjectsView subjects={subjects} progress={progress} onStatusChange={handleStatusChange} api={api} />,
     tests:     <TestsView tests={tests} subjects={subjects} onAdd={handleAddTest} onDelete={handleDeleteTest} />,
     planner:   <PlannerView planner={planner} subjects={subjects} onSave={handleSavePlanner} />,

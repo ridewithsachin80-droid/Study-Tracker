@@ -202,3 +202,27 @@ CREATE TABLE IF NOT EXISTS doubts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_doubts_user_time ON doubts(user_id, created_at DESC);
+
+-- ═══════════════════════════════════════════════════════════
+--  NEET Trajectory Analysis – migration (safe to re-run)
+--  Captures paper difficulty + class-rank context per test, and
+--  stores AI-generated long-range projections built from the trend.
+-- ═══════════════════════════════════════════════════════════
+ALTER TABLE test_results ADD COLUMN IF NOT EXISTS difficulty_tier VARCHAR(20);   -- standard|moderate|hard|very_hard
+ALTER TABLE test_results ADD COLUMN IF NOT EXISTS class_rank INTEGER;
+ALTER TABLE test_results ADD COLUMN IF NOT EXISTS class_size INTEGER;
+ALTER TABLE test_results ADD COLUMN IF NOT EXISTS class_num_at_test INTEGER;     -- snapshot, since class_num changes yearly
+
+CREATE TABLE IF NOT EXISTS neet_projections (
+  id                   SERIAL PRIMARY KEY,
+  user_id              UUID REFERENCES users(id) ON DELETE CASCADE,
+  projection_text      TEXT NOT NULL,
+  projected_min        NUMERIC(5,1),
+  projected_max        NUMERIC(5,1),
+  confidence           VARCHAR(10),        -- low|moderate|high
+  based_on_test_count  INTEGER,
+  provider             VARCHAR(20),
+  created_at           TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_neet_proj_user ON neet_projections(user_id, created_at DESC);

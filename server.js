@@ -336,14 +336,15 @@ app.get('/api/tests', auth, async (req,res) => {
 });
 
 app.post('/api/tests', auth, async (req,res) => {
-  const {subjectName,testType,score,maxScore,testDate,notes} = req.body;
+  const {subjectName,testType,score,maxScore,testDate,notes,difficultyTier,classRank,classSize} = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const {rows:[u]} = await client.query('SELECT class_num FROM users WHERE id=$1',[req.user.id]);
     const {rows:[t]} = await client.query(
-      `INSERT INTO test_results(user_id,subject_name,test_type,score,max_score,test_date,notes)
-       VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [req.user.id,subjectName,testType,score,maxScore||100,testDate||new Date(),notes]
+      `INSERT INTO test_results(user_id,subject_name,test_type,score,max_score,test_date,notes,difficulty_tier,class_rank,class_size,class_num_at_test)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [req.user.id,subjectName,testType,score,maxScore||100,testDate||new Date(),notes,difficultyTier||null,classRank||null,classSize||null,u?.class_num||null]
     );
     await client.query('UPDATE users SET xp=xp+20 WHERE id=$1',[req.user.id]);
     const {rows:[{xp}]} = await client.query('SELECT xp FROM users WHERE id=$1',[req.user.id]);
@@ -605,6 +606,61 @@ app.post('/api/doubts/transcribe', auth, async (req,res) => {
 });
 
 // ════════════════════════════════════════════════════════════════
+//  NEET TRAJECTORY ANALYSIS
+// ════════════════════════════════════════════════════════════════
+app.post('/api/analysis/neet-projection', auth, requireRole('student'), async (req,res) => {
+  const {rows:[u]} = await pool.query('SELECT name,board,class_num,stream FROM users WHERE id=$1',[req.user.id]);
+  const {rows:tests} = await pool.query(
+    `SELECT subject_name,test_type,score,max_score,test_date,notes,difficulty_tier,class_rank,class_size,class_num_at_test
+     FROM test_results WHERE user_id=$1 ORDER BY test_date ASC`,[req.user.id]
+  );
+  if (!tests.length) return res.status(400).json({error:'Log at least one test before requesting a trajectory analysis'});
+
+  const summary = tests.map(t => {
+    const pct = Math.round(t.score/t.max_score*100);
+    const rankPart = t.class_rank && t.class_size ? `, rank ${t.class_rank}/${t.class_size} in class` : '';
+    const diffPart = t.difficulty_tier ? `, paper difficulty: ${t.difficulty_tier}` : '';
+    const dateStr = t.test_date instanceof Date ? t.test_date.toISOString().slice(0,10) : (t.test_date||'');
+    return `- Class ${t.class_num_at_test||'?'}, ${dateStr}: ${t.subject_name} ${t.test_type} — ${t.score}/${t.max_score} (${pct}%)${rankPart}${diffPart}${t.notes?`. Notes: ${t.notes}`:''}`;
+  }).join('\n');
+
+  const systemPrompt =
+    `You are an experienced NEET coaching mentor analysing a student's academic trajectory for their parent. ` +
+    `Student: Class ${u.class_num} (${(u.board||'').toUpperCase()} board${u.stream?`, ${u.stream}`:''}), aiming for NEET. ` +
+    `Here is their full test history so far, oldest to newest:\n${summary}\n\n` +
+    `Project a realistic NEET score range (out of 720) they might achieve in Class 12 IF their current trend continues. Follow these rules strictly:\n` +
+    `1. Normalize each score by its stated paper difficulty — a 60% on a "very_hard" paper is a stronger signal than 60% on a "standard" one.\n` +
+    `2. Weight class rank/percentile more heavily than raw percentage when both are available, since rank is cohort-relative and raw % is paper-dependent.\n` +
+    `3. Be honest about uncertainty: give a WIDE range, not false precision, and state confidence as low/moderate/high based on how much data exists and how many years remain until Class 12.\n` +
+    `4. Name 1-2 specific subjects that are the strongest lever for improvement, and briefly say why.\n` +
+    `5. Never sound alarmist or falsely certain — this guides effort, it does not predict fate.\n` +
+    `Start your reply with exactly this format on the first two lines: "PROJECTED_RANGE: <min>-<max>" then "CONFIDENCE: low|moderate|high", then a blank line, then a clear, warm, honest 150-250 word analysis.`;
+
+  try {
+    const { text, provider } = await askAI(systemPrompt, 'Please analyse this trajectory now.');
+    const rangeMatch = text.match(/PROJECTED_RANGE:\s*(\d+)\s*-\s*(\d+)/i);
+    const confMatch  = text.match(/CONFIDENCE:\s*(low|moderate|high)/i);
+    const narrative  = text.replace(/PROJECTED_RANGE:.*\n?/i,'').replace(/CONFIDENCE:.*\n?/i,'').trim();
+
+    const {rows:[row]} = await pool.query(
+      `INSERT INTO neet_projections(user_id,projection_text,projected_min,projected_max,confidence,based_on_test_count,provider)
+       VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [req.user.id, narrative, rangeMatch?.[1]||null, rangeMatch?.[2]||null, confMatch?.[1]?.toLowerCase()||null, tests.length, provider]
+    );
+    logActivity(req.user.id, 'trajectory_analyzed', { testCount: tests.length, projectedMin: row.projected_min, projectedMax: row.projected_max });
+    res.json(row);
+  } catch(e) {
+    console.error(e);
+    res.status(503).json({error: e.message || 'Trajectory analysis is temporarily unavailable'});
+  }
+});
+
+app.get('/api/analysis/neet-projection/latest', auth, async (req,res) => {
+  const {rows} = await pool.query('SELECT * FROM neet_projections WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1',[req.user.id]);
+  res.json(rows[0]||null);
+});
+
+// ════════════════════════════════════════════════════════════════
 //  PARENT MONITORING
 // ════════════════════════════════════════════════════════════════
 
@@ -741,6 +797,12 @@ app.get('/api/parent/child/:studentId/doubts', auth, requireRole('parent'), requ
     [req.params.studentId]
   );
   res.json(rows);
+});
+
+// latest NEET trajectory projection, read-only
+app.get('/api/parent/child/:studentId/neet-projection', auth, requireRole('parent'), requireLinkedChild, async (req,res) => {
+  const {rows} = await pool.query('SELECT * FROM neet_projections WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1',[req.params.studentId]);
+  res.json(rows[0]||null);
 });
 
 // ════════════════════════════════════════════════════════════════
